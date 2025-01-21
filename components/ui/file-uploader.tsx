@@ -14,80 +14,64 @@ import { useControllableState } from "@/hooks/use-controllable-state";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
+/** Adjust this to your shadcn Alert component path */
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+
+/**
+ * Define a lookup for MIME types => user-friendly labels.
+ * Add or customize as you wish.
+ */
+const MIME_TYPE_LABELS: Record<string, string> = {
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+        "Microsoft Excel (.xlsx)",
+    "image/*": "Images",
+    "application/pdf": "PDF Files",
+    // etc.
+};
 
 interface FileUploaderProps extends React.HTMLAttributes<HTMLDivElement> {
     /**
      * Value of the uploader.
-     * @type File[]
-     * @default undefined
-     * @example value={files}
      */
     value?: File[];
 
     /**
      * Function to be called when the value changes.
-     * @type (files: File[]) => void
-     * @default undefined
-     * @example onValueChange={(files) => setFiles(files)}
      */
     onValueChange?: (files: File[]) => void;
 
     /**
      * Function to be called when files are uploaded.
-     * @type (files: File[]) => Promise<void>
-     * @default undefined
-     * @example onUpload={(files) => uploadFiles(files)}
      */
     onUpload?: (files: File[]) => Promise<void>;
 
     /**
      * Progress of the uploaded files.
-     * @type Record<string, number> | undefined
-     * @default undefined
-     * @example progresses={{ "file1.png": 50 }}
      */
     progresses?: Record<string, number>;
 
     /**
      * Accepted file types for the uploader.
-     * @type { [key: string]: string[]}
-     * @default
-     * ```ts
-     * { "image/*": [] }
-     * ```
-     * @example accept={["image/png", "image/jpeg"]}
      */
     accept?: DropzoneProps["accept"];
 
     /**
      * Maximum file size for the uploader.
-     * @type number | undefined
-     * @default 1024 * 1024 * 2 // 2MB
-     * @example maxSize={1024 * 1024 * 2} // 2MB
      */
     maxSize?: DropzoneProps["maxSize"];
 
     /**
      * Maximum number of files for the uploader.
-     * @type number | undefined
-     * @default 1
-     * @example maxFileCount={4}
      */
     maxFileCount?: DropzoneProps["maxFiles"];
 
     /**
      * Whether the uploader should accept multiple files.
-     * @type boolean
-     * @default false
-     * @example multiple
      */
     multiple?: boolean;
 
     /**
      * Whether the uploader is disabled.
-     * @type boolean
-     * @default false
-     * @example disabled
      */
     disabled?: boolean;
 }
@@ -114,56 +98,114 @@ export function FileUploader(props: FileUploaderProps) {
         onChange: onValueChange,
     });
 
+    // We’ll store any errors here to display them below the drop zone
+    const [uploadErrors, setUploadErrors] = React.useState<string[]>([]);
+
+    /**
+     * Returns a single string listing all accepted mime-types or patterns
+     * in a user-friendly manner.
+     */
+    function getFriendlyAcceptLabels(): string {
+        if (!accept) return "";
+        const mimeTypes = Object.keys(accept);
+        return mimeTypes
+            .map((mime) => MIME_TYPE_LABELS[mime] ?? mime)
+            .join(", ");
+    }
+
     const onDrop = React.useCallback(
         (acceptedFiles: File[], rejectedFiles: FileRejection[]) => {
+            // Clear errors on each new drop
+            setUploadErrors([]);
+
+            // 1) Check for max file count if user attempts more than allowed
             if (!multiple && maxFileCount === 1 && acceptedFiles.length > 1) {
-                toast.error("Cannot upload more than 1 file at a time");
+                setUploadErrors((prev) => [
+                    ...prev,
+                    "Cannot upload more than 1 file at a time.",
+                ]);
                 return;
             }
-
             if ((files?.length ?? 0) + acceptedFiles.length > maxFileCount) {
-                toast.error(`Cannot upload more than ${maxFileCount} files`);
+                setUploadErrors((prev) => [
+                    ...prev,
+                    `Cannot upload more than ${maxFileCount} file${
+                        maxFileCount > 1 ? "s" : ""
+                    }.`,
+                ]);
                 return;
             }
 
+            // 2) Map accepted files, build preview
             const newFiles = acceptedFiles.map((file) =>
                 Object.assign(file, {
                     preview: URL.createObjectURL(file),
                 })
             );
-
             const updatedFiles = files ? [...files, ...newFiles] : newFiles;
-
             setFiles(updatedFiles);
 
+            // 3) Handle rejections and show them as shadcn Alerts
             if (rejectedFiles.length > 0) {
-                rejectedFiles.forEach(({ file }) => {
-                    toast.error(`File ${file.name} was rejected`);
-                });
+                const friendlyAcceptText = getFriendlyAcceptLabels();
+
+                const newErrors: string[] = rejectedFiles.flatMap(
+                    ({ file, errors }) => {
+                        return errors.map((e) => {
+                            switch (e.code) {
+                                case "file-invalid-type":
+                                    return `File "${file.name}" is not a supported file type. 
+                Supported types: ${friendlyAcceptText}.`;
+
+                                case "file-too-large":
+                                    return `File "${
+                                        file.name
+                                    }" exceeds the max size of ${formatBytes(
+                                        maxSize as number
+                                    )}.`;
+
+                                default:
+                                    return `File "${file.name}" was rejected: ${e.message}`;
+                            }
+                        });
+                    }
+                );
+                setUploadErrors((prev) => [...prev, ...newErrors]);
             }
 
+            // 4) If onUpload is given and we have files to upload, run it
             if (
                 onUpload &&
                 updatedFiles.length > 0 &&
-                updatedFiles.length <= maxFileCount
+                updatedFiles.length <= maxFileCount &&
+                rejectedFiles.length === 0
             ) {
                 const target =
-                    updatedFiles.length > 0
+                    updatedFiles.length > 1
                         ? `${updatedFiles.length} files`
-                        : `file`;
+                        : `${updatedFiles.length} file`;
 
                 toast.promise(onUpload(updatedFiles), {
                     loading: `Uploading ${target}...`,
                     success: () => {
+                        // Clear files on success
                         setFiles([]);
-                        return `${target} uploaded`;
+                        return `${target} uploaded successfully.`;
                     },
-                    error: `Failed to upload ${target}`,
+                    error: `Failed to upload ${target}.`,
                 });
             }
         },
-
-        [files, maxFileCount, multiple, onUpload, setFiles]
+        [
+            accept,
+            files,
+            maxFileCount,
+            multiple,
+            onUpload,
+            setFiles,
+            maxSize,
+            getFriendlyAcceptLabels,
+        ]
     );
 
     function onRemove(index: number) {
@@ -213,14 +255,6 @@ export function FileUploader(props: FileUploaderProps) {
                         <input {...getInputProps()} />
                         {isDragActive ? (
                             <div className="flex flex-col items-center justify-center gap-4 sm:px-5 opacity-50">
-                                {/* <Image
-                                    // src="/images/tsk-monkey.png"
-                                    src="/images/drop-it-monkey.png"
-                                    alt="Tsk Monkey"
-                                    width={200}
-                                    height={200}
-                                    className="mb-4"
-                                /> */}
                                 <div className="rounded-full border border-dashed border-muted-foreground p-3">
                                     <Upload
                                         className="size-7 text-muted-foreground"
@@ -233,14 +267,6 @@ export function FileUploader(props: FileUploaderProps) {
                             </div>
                         ) : (
                             <div className="flex flex-col items-center justify-center gap-4 sm:px-5">
-                                {/* <Image
-                                    // src="/images/tsk-monkey.png"
-                                    src="/images/drop-it-monkey.png"
-                                    alt="Tsk Monkey"
-                                    width={200}
-                                    height={200}
-                                    className="mb-4"
-                                /> */}
                                 <div className="rounded-full border border-dashed border-muted-foreground p-3">
                                     <Upload
                                         className="size-7 text-muted-foreground"
@@ -249,7 +275,7 @@ export function FileUploader(props: FileUploaderProps) {
                                 </div>
                                 <div className="flex flex-col gap-px">
                                     <p className="font-medium text-muted-foreground">
-                                        Drag {`'n'`} drop the template here.
+                                        Drag {`'n'`} drop the file here.
                                     </p>
                                     <p className="text-sm text-muted-foreground/70">
                                         You can also click to browse for the
@@ -261,6 +287,24 @@ export function FileUploader(props: FileUploaderProps) {
                     </div>
                 )}
             </Dropzone>
+
+            {/* Show errors below the drop zone */}
+            {uploadErrors.length > 0 && (
+                <div className="flex flex-col gap-2 px-4">
+                    {uploadErrors.map((error, idx) => (
+                        <Alert
+                            variant="destructive"
+                            key={idx}
+                            className="mb-3"
+                        >
+                            <AlertTitle>Error</AlertTitle>
+                            <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                    ))}
+                </div>
+            )}
+
+            {/* List of files (if any) */}
             {files?.length ? (
                 <ScrollArea className="h-fit w-full px-3">
                     <div className="flex max-h-48 flex-col gap-4">
@@ -299,7 +343,9 @@ function FileCard({ file, progress, onRemove }: FileCardProps) {
                             {formatBytes(file.size)}
                         </p>
                     </div>
-                    {progress ? <Progress value={progress} /> : null}
+                    {typeof progress === "number" && (
+                        <Progress value={progress} />
+                    )}
                 </div>
             </div>
             <div className="flex items-center gap-2">

@@ -15,13 +15,17 @@ Easily fill out your Younghoon report cards with the magic of programming.
 
 ### p0
 
--   UI: added Why You Should Use It section
 -   BE: files can now be uploaded on the client side
 -   BE: data is ingested into state
 -   BE: data is mapped to the correct fields
 -   UX: PDFs are generated and downloaded
 
 ## Change Log
+
+2025/01/21
+
+-   UX: file upload errors are now displayed on the page
+-   UI: added Why You Should Use It section
 
 2025/01/21
 
