@@ -2,20 +2,113 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 2rem;
+    font-family: "Quicksand", sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@layer base {
+    :root {
+        --logo: 136.88 44.04% 42.75%;
+        --background: 200 100% 95%;
+        --foreground: 0 0% 10%;
+        --card: 0 0 100%;
+        --card-foreground: 0 0% 10%;
+        --popover: 60 100% 95%;
+        --popover-foreground: 0 0% 10%;
+        --primary: 340 100% 85%;
+        --primary-foreground: 0 0% 10%;
+        --secondary: 120 100% 85%;
+        --secondary-foreground: 0 0% 10%;
+        --muted: 0 0% 85%;
+        --muted-foreground: 0 0% 50%;
+        --accent: 280 100% 90%;
+        --accent-foreground: 0 0% 10%;
+        --destructive: 0 100% 45%;
+        --destructive-foreground: 0 0% 10%;
+        --border: 0 0% 80%;
+        --input: 0 0% 90%;
+        --ring: 200 100% 80%;
+        --radius: 0.5rem;
+        --chart-1: 340 100% 87%;
+        --chart-2: 200 100% 90%;
+        --chart-3: 120 100% 85%;
+        --chart-4: 60 100% 85%;
+        --chart-5: 280 100% 90%;
+    }
+    .dark {
+        --logo: 137.33 44.12% 40%;
+        --background: 200 30% 13%;
+        --foreground: 0 0% 90%;
+        --card: 200 30% 5%;
+        --card-foreground: 0 0% 90%;
+        --popover: 60 25% 15%;
+        --popover-foreground: 0 0% 90%;
+        --primary: 340 70% 45%;
+        --primary-foreground: 0 0% 95%;
+        --secondary: 120 70% 35%;
+        --secondary-foreground: 0 0% 95%;
+        --muted: 200 25% 25%;
+        --muted-foreground: 0 0% 60%;
+        --accent: 280 70% 40%;
+        --accent-foreground: 0 0% 95%;
+        --destructive: 0 80% 40%;
+        --destructive-foreground: 0 0% 95%;
+        --border: 200 25% 20%;
+        --input: 200 25% 20%;
+        --ring: 200 70% 40%;
+        --radius: 0.5rem;
+        --chart-1: 340 70% 45%;
+        --chart-2: 200 70% 40%;
+        --chart-3: 120 70% 35%;
+        --chart-4: 60 70% 35%;
+        --chart-5: 280 70% 40%;
+    }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+.link {
+    @apply underline;
+}
+
+.text-2xs {
+    font-size: 0.6rem; /* 10px */
+    line-height: 0.9rem; /* 14px */
+}
+.text-3xs {
+    font-size: 0.5rem; /* 8px */
+    line-height: 0.9rem; /* 10px */
+}
+.text-4xs {
+    font-size: 0.4rem; /* px */
+    line-height: 0.8rem; /* px */
+}
+.text-5xs {
+    font-size: 0.3rem; /* px */
+    line-height: 0.4rem; /* px */
+}
+.text-6xs {
+    font-size: 0.2rem; /* px */
+    line-height: 0.3rem; /* px */
+}
+.text-7xs {
+    font-size: 0.1rem; /* px */
+    line-height: 0.2rem; /* px */
+}
+
+.text-10xl {
+    font-size: 10rem; /* 160px */
+    line-height: 1; /* 16px */
+}
+.text-11xl {
+    font-size: 12rem; /* 192px */
+    line-height: 1; /* 16px */
+}
+.text-12xl {
+    font-size: 14rem; /* 224px */
+    line-height: 1; /* 16px */
+}
+.text-13xl {
+    font-size: 16rem; /* 256px */
+    line-height: 1; /* 16px */
 }

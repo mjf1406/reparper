@@ -1,36 +1,30 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Reparper
 
-## Getting Started
+Easily fill out your Younghoon report cards with the magic of programming.
 
-First, run the development server:
+## To-do List
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### p1
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+-   UX: loading state indicates PDFs are being generated with stages
+    1. Parsing Data
+    2. Mapping Data
+    3. Building boy PDF
+    4. Building girl PDF
+    5. Complete
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### p0
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+-   UI: added Why You Should Use It section
+-   BE: files can now be uploaded on the client side
+-   BE: data is ingested into state
+-   BE: data is mapped to the correct fields
+-   UX: PDFs are generated and downloaded
 
-## Learn More
+## Change Log
 
-To learn more about Next.js, take a look at the following resources:
+2025/01/21
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+-   UI: basic UI is up and running
+-   UI: Instructions are done
+-   UI: added heading for Why You SHould Use It
