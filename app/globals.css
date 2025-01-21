@@ -25,7 +25,7 @@ html {
         --muted-foreground: 0 0% 50%;
         --accent: 280 100% 90%;
         --accent-foreground: 0 0% 10%;
-        --destructive: 0 100% 45%;
+        --destructive: 0 100% 55%;
         --destructive-foreground: 0 0% 10%;
         --border: 0 0% 80%;
         --input: 0 0% 90%;
@@ -53,7 +53,7 @@ html {
         --muted-foreground: 0 0% 60%;
         --accent: 280 70% 40%;
         --accent-foreground: 0 0% 95%;
-        --destructive: 0 80% 40%;
+        --destructive: 0 80% 60%;
         --destructive-foreground: 0 0% 95%;
         --border: 200 25% 20%;
         --input: 200 25% 20%;

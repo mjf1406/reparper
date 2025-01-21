@@ -295,9 +295,9 @@ export function FileUploader(props: FileUploaderProps) {
                         <Alert
                             variant="destructive"
                             key={idx}
-                            className="mb-3"
+                            className="mb-3 bg-background"
                         >
-                            <AlertTitle>Error</AlertTitle>
+                            <AlertTitle className="font-bold">Error</AlertTitle>
                             <AlertDescription>{error}</AlertDescription>
                         </Alert>
                     ))}

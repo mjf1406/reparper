@@ -26,6 +26,7 @@ Easily fill out your Younghoon report cards with the magic of programming.
 
 -   UX: file upload errors are now displayed on the page
 -   UI: added Why You Should Use It section
+-   UX: improved readability of destructive color
 
 2025/01/21
 
