@@ -48,8 +48,10 @@ export default function Home() {
                         Download the complete template as{" "}
                         <strong>Microsoft Excel (.xlsx)</strong>.
                     </li>
-                    <li>Drag the XLSX into the dropbox above.</li>
-                    <li>Watch the magic happen.</li>
+                    <li>
+                        Drag <i>Reparper Template.xlsx</i> into the upload box
+                        above.
+                    </li>
                 </ol>
             </div>
             <div className="space-y-5">
@@ -129,7 +131,8 @@ export default function Home() {
                             <Link
                                 className="link"
                                 // href="https://mail.google.com/chat/u/0/#chat/email/michael.fitzgerald@younghoon.org"
-                                href="https://chat.google.com/dm/michael.fitzgerald@younghoon.org"
+                                // href="https://chat.google.com/dm/michael.fitzgerald@younghoon.org"
+                                href="https://chat.google.com/?email=michael.fitzgerald@younghoon.org"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >

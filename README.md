@@ -26,6 +26,10 @@ Easily fill out your Younghoon report cards with the magic of programming.
 
 2025/01/23
 
+-   BE: preliminary data ETL is complete
+
+2025/01/23
+
 -   UI: a dialog opens upon successfully validated template.xlsx
 -   UI: added a button to re-open the dialog in case it was closed by accident
 -   UX: added an FAQ
@@ -36,7 +40,7 @@ Easily fill out your Younghoon report cards with the magic of programming.
     -   Name (Mr. Fitzgerald)
     -   Grade (1, 2, 3, 4, 5, or 6)
     -   Class Number (1, 2, 3, or 4)
-    -   Semeseter (1 or 2)
+    -   Semester (1 or 2)
 
 2025/01/21
 

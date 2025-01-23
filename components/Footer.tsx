@@ -42,7 +42,7 @@ const Footer = () => {
 
             <div className="text-2xs font-[family-name:var(--font-geist-mono)] flex flex-col gap-2 items-center justify-center">
                 <div className="">
-                    Code © {new Date().getFullYear()}. Licensed under{" "}
+                    Code © 2025. Licensed under{" "}
                     <Link
                         className="link"
                         href="https://opensource.org/license/mit"

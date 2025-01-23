@@ -42,6 +42,7 @@ import * as z from "zod";
  * The FileUploader component
  */
 import { FileUploader } from "./ui/file-uploader";
+import { processData } from "@/lib/ProcessData";
 
 /**
  * Define a zod schema for your dialog form.
@@ -60,6 +61,8 @@ type FormValues = z.infer<typeof formSchema>;
 export default function FileUploadForm() {
     const [files, setFiles] = React.useState<File[] | undefined>(undefined);
     const [openDialog, setOpenDialog] = React.useState(false);
+    const [data, setData] = React.useState<unknown>();
+    console.log("🚀 ~ FileUploadForm ~ data:", data);
 
     // Initialize the form using react-hook-form and zod
     const form = useForm<FormValues>({
@@ -78,15 +81,28 @@ export default function FileUploadForm() {
      * when files are uploaded.
      */
     async function validateAndProcessXLSX(files: File[]) {
-        // --------------------------------------------
-        // YOUR XLSX VALIDATION LOGIC HERE
-        // --------------------------------------------
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        console.log(files);
-        toast.success("XLSX file validated successfully! (Placeholder)");
+        if (files.length === 0) {
+            toast.error("No file uploaded!");
+            return;
+        }
 
-        // Open the dialog form after validation
-        setOpenDialog(true);
+        const file = files[0];
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const data = e.target?.result;
+            if (data) {
+                const sheetsData = processData(data as string);
+                setData(sheetsData);
+                setOpenDialog(true);
+            }
+        };
+
+        reader.onerror = () => {
+            toast.error("Error reading the file!");
+        };
+
+        reader.readAsBinaryString(file);
     }
 
     /**
@@ -130,10 +146,6 @@ export default function FileUploadForm() {
                 />
             </form>
 
-            {/* 
-        Conditionally display a button to open the dialog
-        if there is at least one file already uploaded.
-      */}
             {files && files.length > 0 && (
                 <div className="flex justify-center mt-4">
                     <Button

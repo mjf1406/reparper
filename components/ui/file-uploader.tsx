@@ -308,7 +308,8 @@ Supported types: ${friendlyAcceptText}.`;
                                     </div>
                                     <div className="flex flex-col gap-px">
                                         <p className="font-medium text-muted-foreground">
-                                            Drag &apos;n&apos; drop a file here.
+                                            Drag &apos;n&apos; drop{" "}
+                                            <i>Reparper Template.xlsx</i> here.
                                         </p>
                                         <p className="text-sm text-muted-foreground/70">
                                             Or click to browse for the file.
