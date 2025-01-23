@@ -19,6 +19,8 @@ Easily fill out your Younghoon report cards with the magic of programming.
 -   BE: data is ingested into state
 -   BE: data is mapped to the correct fields
 -   UX: PDFs are generated and downloaded
+-   BE: Ensure there are line breaks between each Subject Achievement Comment bullet point.
+-   BE: Ensure the comments remove new line breaks and that they are replaced with spaces when adding the Long-form Comments
 
 ## Change Log
 
