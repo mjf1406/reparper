@@ -21,14 +21,22 @@ Easily fill out your Younghoon report cards with the magic of programming.
 -   UX: PDFs are generated and downloaded
 -   BE: Ensure there are line breaks between each Subject Achievement Comment bullet point.
 -   BE: Ensure the comments remove new line breaks and that they are replaced with spaces when adding the Long-form Comments
--   UX: After user uploads a valid file, open a dialog for them to set:
-    -   Date (February 7th, 2025)
-    -   Name (Mr. Fitzgerald)
-    -   Grade (1, 2, 3, 4, 5, 6)
-    -   Class Number (1, 2, 3, 4)
-    -   Semeseter (1 or 2)
 
 ## Change Log
+
+2025/01/23
+
+-   UI: a dialog opens upon successfully validated template.xlsx
+-   UI: added a button to re-open the dialog in case it was closed by accident
+-   UX: added an FAQ
+-   UX: added more reasons for using it
+-   UI: updated the upload box states for loading and upload complete
+-   UX: added a dialog that opens after user uploads a valid file, open a dialog for them to set:
+    -   Date (February 7th, 2025)
+    -   Name (Mr. Fitzgerald)
+    -   Grade (1, 2, 3, 4, 5, or 6)
+    -   Class Number (1, 2, 3, or 4)
+    -   Semeseter (1 or 2)
 
 2025/01/21
 

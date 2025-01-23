@@ -2,12 +2,11 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { FileText, Upload, X } from "lucide-react";
+import { FileText, Upload, X, Check } from "lucide-react";
 import Dropzone, {
     type DropzoneProps,
     type FileRejection,
 } from "react-dropzone";
-import { toast } from "sonner";
 
 import { cn, formatBytes } from "@/lib/utils";
 import { useControllableState } from "@/hooks/use-controllable-state";
@@ -76,6 +75,8 @@ interface FileUploaderProps extends React.HTMLAttributes<HTMLDivElement> {
     disabled?: boolean;
 }
 
+type UploadState = "idle" | "uploading" | "success";
+
 export function FileUploader(props: FileUploaderProps) {
     const {
         value: valueProp,
@@ -98,7 +99,10 @@ export function FileUploader(props: FileUploaderProps) {
         onChange: onValueChange,
     });
 
-    // We’ll store any errors here to display them below the drop zone
+    // Track overall upload state for the drop zone
+    const [uploadState, setUploadState] = React.useState<UploadState>("idle");
+
+    // Store any errors here to display them below the drop zone
     const [uploadErrors, setUploadErrors] = React.useState<string[]>([]);
 
     /**
@@ -117,8 +121,9 @@ export function FileUploader(props: FileUploaderProps) {
         (acceptedFiles: File[], rejectedFiles: FileRejection[]) => {
             // Clear errors on each new drop
             setUploadErrors([]);
+            setUploadState("idle");
 
-            // 1) Check for max file count if user attempts more than allowed
+            // 1) Check for max file count
             if (!multiple && maxFileCount === 1 && acceptedFiles.length > 1) {
                 setUploadErrors((prev) => [
                     ...prev,
@@ -155,7 +160,7 @@ export function FileUploader(props: FileUploaderProps) {
                             switch (e.code) {
                                 case "file-invalid-type":
                                     return `File "${file.name}" is not a supported file type. 
-                Supported types: ${friendlyAcceptText}.`;
+Supported types: ${friendlyAcceptText}.`;
 
                                 case "file-too-large":
                                     return `File "${
@@ -173,27 +178,29 @@ export function FileUploader(props: FileUploaderProps) {
                 setUploadErrors((prev) => [...prev, ...newErrors]);
             }
 
-            // 4) If onUpload is given and we have files to upload, run it
+            // 4) If onUpload is given, attempt to upload
             if (
                 onUpload &&
                 updatedFiles.length > 0 &&
                 updatedFiles.length <= maxFileCount &&
                 rejectedFiles.length === 0
             ) {
-                const target =
-                    updatedFiles.length > 1
-                        ? `${updatedFiles.length} files`
-                        : `${updatedFiles.length} file`;
+                // Start “uploading” state
+                setUploadState("uploading");
 
-                toast.promise(onUpload(updatedFiles), {
-                    loading: `Uploading ${target}...`,
-                    success: () => {
-                        // Clear files on success
-                        setFiles([]);
-                        return `${target} uploaded successfully.`;
-                    },
-                    error: `Failed to upload ${target}.`,
-                });
+                onUpload(updatedFiles)
+                    .then(() => {
+                        setUploadState("success");
+                        // If you want to clear files once uploaded, do:
+                        // setFiles([]);
+                    })
+                    .catch((err) => {
+                        setUploadErrors((prev) => [
+                            ...prev,
+                            `Failed to upload: ${err?.message ?? ""}`,
+                        ]);
+                        setUploadState("idle");
+                    });
             }
         },
         [
@@ -231,7 +238,7 @@ export function FileUploader(props: FileUploaderProps) {
     const isDisabled = disabled || (files?.length ?? 0) >= maxFileCount;
 
     return (
-        <div className="relative flex flex-col gap-6 overflow-hidden w-[600px] bg-foreground/5 mx-auto">
+        <div className="relative flex w-[600px] flex-col gap-6 overflow-hidden bg-foreground/5 mx-auto">
             <Dropzone
                 onDrop={onDrop}
                 accept={accept}
@@ -240,52 +247,95 @@ export function FileUploader(props: FileUploaderProps) {
                 multiple={maxFileCount > 1 || multiple}
                 disabled={isDisabled}
             >
-                {({ getRootProps, getInputProps, isDragActive }) => (
-                    <div
-                        {...getRootProps()}
-                        className={cn(
-                            "group relative grid h-80 w-full cursor-pointer place-items-center rounded-lg border-2 border-dashed border-muted-foreground/25 px-5 py-2.5 text-center transition hover:bg-muted/25",
-                            "ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                            isDragActive && "border-muted-foreground/50",
-                            isDisabled && "pointer-events-none opacity-60",
-                            className
-                        )}
-                        {...dropzoneProps}
-                    >
-                        <input {...getInputProps()} />
-                        {isDragActive ? (
-                            <div className="flex flex-col items-center justify-center gap-4 sm:px-5 opacity-50">
+                {({ getRootProps, getInputProps, isDragActive }) => {
+                    // Conditionally render content in the drop zone based on uploadState
+                    let dropzoneContent: React.ReactNode;
+
+                    if (uploadState === "uploading") {
+                        // Show spinning upload icon + text
+                        dropzoneContent = (
+                            <div className="flex flex-col items-center justify-center gap-4 sm:px-5 transition-all duration-300">
                                 <div className="rounded-full border border-dashed border-muted-foreground p-3">
                                     <Upload
-                                        className="size-7 text-muted-foreground"
+                                        className="size-7 text-muted-foreground animate-spin"
                                         aria-hidden="true"
                                     />
                                 </div>
                                 <p className="font-medium text-muted-foreground">
-                                    Drop it like it&apos;s hot!
+                                    Uploading your file...
                                 </p>
                             </div>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center gap-4 sm:px-5">
-                                <div className="rounded-full border border-dashed border-muted-foreground p-3">
-                                    <Upload
-                                        className="size-7 text-muted-foreground"
+                        );
+                    } else if (uploadState === "success") {
+                        // Show checkmark + success text
+                        dropzoneContent = (
+                            <div className="flex flex-col items-center justify-center gap-4 sm:px-5 transition-all duration-300">
+                                <div className="rounded-full border border-dashed border-green-500 p-3">
+                                    <Check
+                                        className="size-7 text-green-500"
                                         aria-hidden="true"
                                     />
                                 </div>
-                                <div className="flex flex-col gap-px">
+                                <p className="font-medium text-green-500">
+                                    Template uploaded successfully!
+                                </p>
+                            </div>
+                        );
+                    } else {
+                        // uploadState = "idle"
+                        if (isDragActive) {
+                            dropzoneContent = (
+                                <div className="flex flex-col items-center justify-center gap-4 sm:px-5 opacity-50">
+                                    <div className="rounded-full border border-dashed border-muted-foreground p-3">
+                                        <Upload
+                                            className="size-7 text-muted-foreground"
+                                            aria-hidden="true"
+                                        />
+                                    </div>
                                     <p className="font-medium text-muted-foreground">
-                                        Drag {`'n'`} drop the file here.
-                                    </p>
-                                    <p className="text-sm text-muted-foreground/70">
-                                        You can also click to browse for the
-                                        file.
+                                        Drop it like it&apos;s hot!
                                     </p>
                                 </div>
-                            </div>
-                        )}
-                    </div>
-                )}
+                            );
+                        } else {
+                            dropzoneContent = (
+                                <div className="flex flex-col items-center justify-center gap-4 sm:px-5">
+                                    <div className="rounded-full border border-dashed border-muted-foreground p-3">
+                                        <Upload
+                                            className="size-7 text-muted-foreground"
+                                            aria-hidden="true"
+                                        />
+                                    </div>
+                                    <div className="flex flex-col gap-px">
+                                        <p className="font-medium text-muted-foreground">
+                                            Drag &apos;n&apos; drop a file here.
+                                        </p>
+                                        <p className="text-sm text-muted-foreground/70">
+                                            Or click to browse for the file.
+                                        </p>
+                                    </div>
+                                </div>
+                            );
+                        }
+                    }
+
+                    return (
+                        <div
+                            {...getRootProps()}
+                            className={cn(
+                                "group relative grid h-80 w-full cursor-pointer place-items-center rounded-lg border-2 border-dashed border-muted-foreground/25 px-5 py-2.5 text-center transition hover:bg-muted/25",
+                                "ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                                isDragActive && "border-muted-foreground/50",
+                                isDisabled && "pointer-events-none opacity-60",
+                                className
+                            )}
+                            {...dropzoneProps}
+                        >
+                            <input {...getInputProps()} />
+                            {dropzoneContent}
+                        </div>
+                    );
+                }}
             </Dropzone>
 
             {/* Show errors below the drop zone */}

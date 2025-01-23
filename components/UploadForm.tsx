@@ -3,78 +3,328 @@
 import * as React from "react";
 import { toast } from "sonner";
 
+// Shadcn UI components
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+    Select,
+    SelectTrigger,
+    SelectValue,
+    SelectContent,
+    SelectItem,
+} from "@/components/ui/select";
+
+// Shadcn Form components
+import {
+    Form,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormControl,
+    FormMessage,
+    FormDescription,
+} from "@/components/ui/form";
+
+// React Hook Form + Zod
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+
 /**
- * Import the FileUploader from wherever you placed the code above.
+ * The FileUploader component
  */
 import { FileUploader } from "./ui/file-uploader";
 
+/**
+ * Define a zod schema for your dialog form.
+ * Adjust the schema as needed for your real validation requirements.
+ */
+const formSchema = z.object({
+    date: z.string().nonempty("Please select a date."),
+    name: z.string().min(1, "Please enter a name."),
+    grade: z.string().min(1, "Please select a grade."),
+    classNumber: z.string().min(1, "Please select a class number."),
+    semester: z.string().min(1, "Please select a semester."),
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
 export default function FileUploadForm() {
     const [files, setFiles] = React.useState<File[] | undefined>(undefined);
+    const [openDialog, setOpenDialog] = React.useState(false);
+
+    // Initialize the form using react-hook-form and zod
+    const form = useForm<FormValues>({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            date: "",
+            name: "",
+            grade: "",
+            classNumber: "",
+            semester: "",
+        },
+    });
 
     /**
      * Placeholder function: run any validation or data processing here
      * when files are uploaded.
      */
     async function validateAndProcessXLSX(files: File[]) {
-        // --------------------------------------------------------------
+        // --------------------------------------------
         // YOUR XLSX VALIDATION LOGIC HERE
-        // For example, parse with a library like SheetJS:
-        //   import * as XLSX from "xlsx";
-        //   const workbook = XLSX.read(await files[0].arrayBuffer(), { type: "array" });
-        //   const firstSheetName = workbook.SheetNames[0];
-        //   const worksheet = workbook.Sheets[firstSheetName];
-        //   // ... validate shape, columns, etc.
-        //
-        // If invalid:
-        //   throw new Error("Invalid XLSX format. Please check your template.");
-        // --------------------------------------------------------------
-
-        // For now, we simply "validate" by returning success after a small delay:
+        // --------------------------------------------
         await new Promise((resolve) => setTimeout(resolve, 1000));
         console.log(files);
         toast.success("XLSX file validated successfully! (Placeholder)");
+
+        // Open the dialog form after validation
+        setOpenDialog(true);
     }
 
     /**
      * This would be your "submit" flow— run automatically after a successful upload.
      */
     async function handleSubmit(files: File[]) {
-        // Here you could make an API call, trigger a Next.js route action, etc.
-        // For demonstration, we just show another toast.
+        // Here you could make an API call, etc.
         console.log(files);
         toast.success("Form submitted automatically after XLSX validation!");
     }
 
+    /**
+     * Handle the final form submission inside the dialog.
+     */
+    function onDialogSubmit(values: FormValues) {
+        console.log("Dialog form submitted with:", values);
+        // Close dialog
+        setOpenDialog(false);
+        // Optionally, do more with `values` here.
+    }
+
     return (
-        // Because we no longer need a manual button, onSubmit is unused
-        <form className="flex flex-col gap-4 max-w-xl mx-auto">
-            <FileUploader
-                /**
-                 * Restrict to XLSX files:
-                 * "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                 */
-                accept={{
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
-                        [],
-                }}
-                maxFileCount={1}
-                multiple={false}
-                value={files}
-                onValueChange={(files) => {
-                    // Update local state whenever the user picks/removes files
-                    setFiles(files);
-                }}
-                onUpload={async (files) => {
-                    /**
-                     * This callback is invoked once the dropped file(s) pass Dropzone checks
-                     * (e.g., file type). We’ll:
-                     * 1) Validate the file’s shape/columns, etc. (placeholder).
-                     * 2) Automatically “submit” the form or handle final logic.
-                     */
-                    await validateAndProcessXLSX(files);
-                    await handleSubmit(files);
-                }}
-            />
-        </form>
+        <>
+            {/* File Upload Form */}
+            <form className="flex flex-col gap-4 max-w-xl mx-auto">
+                <FileUploader
+                    accept={{
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+                            [],
+                    }}
+                    maxFileCount={1}
+                    multiple={false}
+                    value={files}
+                    onValueChange={(files) => {
+                        setFiles(files);
+                    }}
+                    onUpload={async (files) => {
+                        await validateAndProcessXLSX(files);
+                        await handleSubmit(files);
+                    }}
+                />
+            </form>
+
+            {/* 
+        Conditionally display a button to open the dialog
+        if there is at least one file already uploaded.
+      */}
+            {files && files.length > 0 && (
+                <div className="flex justify-center mt-4">
+                    <Button
+                        size={"lg"}
+                        onClick={() => setOpenDialog(true)}
+                    >
+                        Submit additional info
+                    </Button>
+                </div>
+            )}
+
+            {/* Shadcn Dialog with a Form inside */}
+            <Dialog
+                open={openDialog}
+                onOpenChange={setOpenDialog}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Additional Information</DialogTitle>
+                        <DialogDescription>
+                            Please provide the following details
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {/* Use the shadcn <Form> component with react-hook-form */}
+                    <Form {...form}>
+                        <form
+                            onSubmit={form.handleSubmit(onDialogSubmit)}
+                            className="space-y-4"
+                        >
+                            {/* Date */}
+                            <FormField
+                                control={form.control}
+                                name="date"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Date</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="date"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormDescription>
+                                            This is the date that the report
+                                            cards will be given to the students.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            {/* Name */}
+                            <FormField
+                                control={form.control}
+                                name="name"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Name</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="text"
+                                                placeholder="Your name"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormDescription>
+                                            This is the name that will appear on
+                                            each report card (e.g. Mr.
+                                            Fitzgerald).
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            {/* Grade */}
+                            <FormField
+                                control={form.control}
+                                name="grade"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Grade</FormLabel>
+                                        <FormControl>
+                                            <Select
+                                                defaultValue={field.value}
+                                                onValueChange={field.onChange}
+                                            >
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue placeholder="Select grade" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="1">
+                                                        1
+                                                    </SelectItem>
+                                                    <SelectItem value="2">
+                                                        2
+                                                    </SelectItem>
+                                                    <SelectItem value="3">
+                                                        3
+                                                    </SelectItem>
+                                                    <SelectItem value="4">
+                                                        4
+                                                    </SelectItem>
+                                                    <SelectItem value="5">
+                                                        5
+                                                    </SelectItem>
+                                                    <SelectItem value="6">
+                                                        6
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            {/* Class Number */}
+                            <FormField
+                                control={form.control}
+                                name="classNumber"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Class Number</FormLabel>
+                                        <FormControl>
+                                            <Select
+                                                defaultValue={field.value}
+                                                onValueChange={field.onChange}
+                                            >
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue placeholder="Select class number" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="1">
+                                                        1
+                                                    </SelectItem>
+                                                    <SelectItem value="2">
+                                                        2
+                                                    </SelectItem>
+                                                    <SelectItem value="3">
+                                                        3
+                                                    </SelectItem>
+                                                    <SelectItem value="4">
+                                                        4
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            {/* Semester */}
+                            <FormField
+                                control={form.control}
+                                name="semester"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Semester</FormLabel>
+                                        <FormControl>
+                                            <Select
+                                                defaultValue={field.value}
+                                                onValueChange={field.onChange}
+                                            >
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue placeholder="Select semester" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="1">
+                                                        1
+                                                    </SelectItem>
+                                                    <SelectItem value="2">
+                                                        2
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <DialogFooter>
+                                <Button type="submit">Submit</Button>
+                            </DialogFooter>
+                        </form>
+                    </Form>
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }
