@@ -21,8 +21,15 @@ Easily fill out your Younghoon report cards with the magic of programming.
 -   UX: PDFs are generated and downloaded
 -   BE: Ensure there are line breaks between each Subject Achievement Comment bullet point.
 -   BE: Ensure the comments remove new line breaks and that they are replaced with spaces when adding the Long-form Comments
+-   PDF: need to check to make sure the font sizes all match
+-   PDF: need to make sure the fonts are the correct fonts
 
 ## Change Log
+
+2025/01/24
+
+-   BE: PDF populates now!
+-   UX: added loading states for the PDF generation
 
 2025/01/23
 
@@ -53,3 +60,8 @@ Easily fill out your Younghoon report cards with the magic of programming.
 -   UI: basic UI is up and running
 -   UI: Instructions are done
 -   UI: added heading for Why You SHould Use It
+
+## Attributions
+
+-   [uploadthing](https://uploadthing.com/) for storing the files securely.
+-   [pdfFiller](https://www.pdffiller.com/) for helping me to find the field names, without which, this might not have been possible.

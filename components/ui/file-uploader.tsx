@@ -272,11 +272,11 @@ Supported types: ${friendlyAcceptText}.`;
                             <div className="flex flex-col items-center justify-center gap-4 sm:px-5 transition-all duration-300">
                                 <div className="rounded-full border border-dashed border-green-500 p-3">
                                     <Check
-                                        className="size-7 text-green-500"
+                                        className="size-7 text-green-800 dark:text-green-500"
                                         aria-hidden="true"
                                     />
                                 </div>
-                                <p className="font-medium text-green-500">
+                                <p className="font-medium text-green-800 dark:text-green-500">
                                     Template uploaded successfully!
                                 </p>
                             </div>

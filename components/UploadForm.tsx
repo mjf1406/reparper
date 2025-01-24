@@ -42,7 +42,10 @@ import * as z from "zod";
  * The FileUploader component
  */
 import { FileUploader } from "./ui/file-uploader";
-import { processData } from "@/lib/ProcessData";
+import { processData, splitByGender, transformToPDF } from "@/lib/ProcessData";
+import Image from "next/image";
+import { PDF, printPDF } from "@/lib/generatePDF";
+import { Grade } from "@/lib/constants";
 
 /**
  * Define a zod schema for your dialog form.
@@ -54,6 +57,9 @@ const formSchema = z.object({
     grade: z.string().min(1, "Please select a grade."),
     classNumber: z.string().min(1, "Please select a class number."),
     semester: z.string().min(1, "Please select a semester."),
+    academicYearStart: z
+        .string()
+        .min(1, "Please select an academic year start."), // Add this line
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -62,7 +68,15 @@ export default function FileUploadForm() {
     const [files, setFiles] = React.useState<File[] | undefined>(undefined);
     const [openDialog, setOpenDialog] = React.useState(false);
     const [data, setData] = React.useState<unknown>();
-    console.log("🚀 ~ FileUploadForm ~ data:", data);
+    const [isLoading, setIsLoading] = React.useState(false);
+    const [loadingMessage, setLoadingMessage] = React.useState("Processing...");
+    const [loadingImage, setLoadingImage] = React.useState(
+        "/path/to/default/image.png"
+    );
+
+    // Generate dynamic year options
+    const currentYear = new Date().getFullYear();
+    const academicYearOptions = [currentYear - 1, currentYear, currentYear + 1];
 
     // Initialize the form using react-hook-form and zod
     const form = useForm<FormValues>({
@@ -73,6 +87,7 @@ export default function FileUploadForm() {
             grade: "",
             classNumber: "",
             semester: "",
+            academicYearStart: "", // Add default value for the new field
         },
     });
 
@@ -111,17 +126,69 @@ export default function FileUploadForm() {
     async function handleSubmit(files: File[]) {
         // Here you could make an API call, etc.
         console.log(files);
-        toast.success("Form submitted automatically after XLSX validation!");
     }
 
     /**
      * Handle the final form submission inside the dialog.
      */
-    function onDialogSubmit(values: FormValues) {
-        console.log("Dialog form submitted with:", values);
-        // Close dialog
-        setOpenDialog(false);
-        // Optionally, do more with `values` here.
+    async function onDialogSubmit(values: FormValues) {
+        const classNumber = values.classNumber;
+        const date = values.date;
+        const grade = values.grade;
+        const name = values.name;
+        const semester = values.semester;
+        const academicYearStart = values.academicYearStart; // Extract academic year start
+
+        try {
+            setIsLoading(true);
+            setLoadingMessage("Getting the data ready!");
+            setLoadingImage("/images/tired-monkey-teacher.png");
+
+            const { females, males } = splitByGender(data);
+            const femalePDFs: PDF[] = transformToPDF(females);
+            const malePDFs: PDF[] = transformToPDF(males);
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+
+            setLoadingMessage("Generating boy PDF!");
+            setLoadingImage("/images/boy-monkey-working.png");
+            await printPDF(
+                malePDFs,
+                semester,
+                "boys",
+                `${grade}-${classNumber}`,
+                parseInt(academicYearStart),
+                grade as Grade,
+                date,
+                name
+            );
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+
+            setLoadingMessage("Generating girl PDF!");
+            setLoadingImage("/images/girl-monkey-working.png");
+            await printPDF(
+                femalePDFs,
+                semester,
+                "girls",
+                `${grade}-${classNumber}`,
+                parseInt(academicYearStart),
+                grade as Grade,
+                date,
+                name
+            );
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+
+            setLoadingMessage("All done!");
+            setLoadingImage("/images/happy-monkey-teacher.png");
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+
+            setOpenDialog(false);
+        } catch (error) {
+            console.error(error);
+            setLoadingMessage("Submission failed. Please try again.");
+            setLoadingImage("/path/to/error/image.png");
+        } finally {
+            setIsLoading(false);
+        }
     }
 
     return (
@@ -330,11 +397,68 @@ export default function FileUploadForm() {
                                 )}
                             />
 
+                            {/* Academic Year Start */}
+                            <FormField
+                                control={form.control}
+                                name="academicYearStart"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>
+                                            Academic Year Start
+                                        </FormLabel>
+                                        <FormControl>
+                                            <Select
+                                                defaultValue={field.value}
+                                                onValueChange={field.onChange}
+                                            >
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue placeholder="Select academic year start" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {academicYearOptions.map(
+                                                        (year) => (
+                                                            <SelectItem
+                                                                key={year}
+                                                                value={year.toString()}
+                                                            >
+                                                                {year}
+                                                            </SelectItem>
+                                                        )
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
                             <DialogFooter>
-                                <Button type="submit">Submit</Button>
+                                <Button
+                                    type="submit"
+                                    disabled={isLoading}
+                                >
+                                    Submit
+                                </Button>
                             </DialogFooter>
                         </form>
                     </Form>
+
+                    {/* Loading Backdrop */}
+                    {isLoading && (
+                        <div className="absolute inset-0 bg-background/80 flex flex-col items-center justify-center gap-4">
+                            <Image
+                                src={loadingImage}
+                                alt="Loading"
+                                className="animate-bounce"
+                                width={300}
+                                height={300}
+                            />
+                            <p className="text-lg font-semibold">
+                                {loadingMessage}
+                            </p>
+                        </div>
+                    )}
                 </DialogContent>
             </Dialog>
         </>
