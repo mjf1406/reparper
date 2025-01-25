@@ -147,21 +147,21 @@ export default function FileUploadForm() {
             const { females, males } = splitByGender(data);
             const femalePDFs: PDF[] = transformToPDF(females);
             const malePDFs: PDF[] = transformToPDF(males);
-            await new Promise((resolve) => setTimeout(resolve, 2000));
+            await new Promise((resolve) => setTimeout(resolve, 3000));
 
-            setLoadingMessage("Generating boy PDF!");
-            setLoadingImage("/images/boy-monkey-working.png");
-            await printPDF(
-                malePDFs,
-                semester,
-                "boys",
-                `${grade}-${classNumber}`,
-                parseInt(academicYearStart),
-                grade as Grade,
-                date,
-                name
-            );
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            // setLoadingMessage("Generating boy PDF!");
+            // setLoadingImage("/images/boy-monkey-working.png");
+            // await printPDF(
+            //     malePDFs,
+            //     semester,
+            //     "boys",
+            //     `${grade}-${classNumber}`,
+            //     parseInt(academicYearStart),
+            //     grade as Grade,
+            //     date,
+            //     name
+            // );
+            // await new Promise((resolve) => setTimeout(resolve, 1000));
 
             setLoadingMessage("Generating girl PDF!");
             setLoadingImage("/images/girl-monkey-working.png");
@@ -176,6 +176,8 @@ export default function FileUploadForm() {
                 name
             );
             await new Promise((resolve) => setTimeout(resolve, 1000));
+
+            return;
 
             setLoadingMessage("All done!");
             setLoadingImage("/images/happy-monkey-teacher.png");
@@ -454,7 +456,7 @@ export default function FileUploadForm() {
                                 width={300}
                                 height={300}
                             />
-                            <p className="text-lg font-semibold">
+                            <p className="text-3xl font-semibold">
                                 {loadingMessage}
                             </p>
                         </div>

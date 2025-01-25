@@ -1,5 +1,10 @@
 export const APP_NAME = "Reparper"
 export type Grade = "1" | "2" | "3" | "4" | "5" | "6";
+export const TITLE_FONT_SIZE = 20
+export const COVER_PAGE_FONT_SIZE = 14
+export const CENTURY_SKILLS_FONT_SIZE = 11
+export const SUBJECT_ACHIEVEMENT_COMMENT_FONT_SIZE = 8
+export const COMMENT_FONT_SIZE = 9
 export const GRADE_FORM_URLS: Record<Grade, string> = {
     1: "https://utfs.io/f/5234b4e8-92e5-4934-bc32-2fe376e43760-1javl8.pdf", // TODO: Do I need to replace with with a grade-specific report card?
     2: "https://utfs.io/f/5234b4e8-92e5-4934-bc32-2fe376e43760-1javl8.pdf", // TODO: Do I need to replace with with a grade-specific report card?
@@ -43,6 +48,9 @@ export const prefixArray = [
     // e.g. if it's student b, then it would be
     // Student b
     { name: "student_name", prefix: "Student " },
+    { name: "title", prefix: "Text15", font: "Cambria Bold"},
+    { name: "date", prefix: "July/feb", font: "Calibri"},
+    { name: "teacher name", prefix: "T:name", font: "Calibri"},
     { name: "student_number", prefix: "number " },
     // --- 21st Century Skills, Learner Traits, and Work Habits ---
     // the below use the letter once and the semester number

@@ -4,27 +4,25 @@ Easily fill out your Younghoon report cards with the magic of programming.
 
 ## To-do List
 
-### p1
-
--   UX: loading state indicates PDFs are being generated with stages
-    1. Parsing Data
-    2. Mapping Data
-    3. Building boy PDF
-    4. Building girl PDF
-    5. Complete
-
 ### p0
 
--   BE: files can now be uploaded on the client side
--   BE: data is ingested into state
--   BE: data is mapped to the correct fields
--   UX: PDFs are generated and downloaded
--   BE: Ensure there are line breaks between each Subject Achievement Comment bullet point.
--   BE: Ensure the comments remove new line breaks and that they are replaced with spaces when adding the Long-form Comments
--   PDF: need to check to make sure the font sizes all match
--   PDF: need to make sure the fonts are the correct fonts
+-   BE: use can now upload report card template
+    -   this is needed because the Subject Achievement Comments (\_og) change on a semester basis and might also change on a grade basis.
+-   PDF: need to make sure the fonts are the correct fonts. Using custom fonts makes the generation SOO slow.
+-   PDF: long comment also needs some padding
+-   PDF: Subject Achievement Comments need some padding
+-   PDF: Subject Achievement Scores should be bold
+-   PDF: 2st Century Skills Scores should be bold
 
 ## Change Log
+
+2025/01/25
+
+-   BE: data is mapped to the correct fields
+-   UX: PDFs are generated and downloaded
+-   BE: data is ingested into state
+-   BE: Ensure there are line breaks between each Subject Achievement Comment bullet point.
+-   BE: Ensure the comments remove new line breaks and that they are replaced with spaces when adding the Long-form Comments
 
 2025/01/24
 
