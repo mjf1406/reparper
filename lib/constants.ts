@@ -13,10 +13,10 @@ export const GRADE_FORM_URLS: Record<Grade, string> = {
     5: "https://68ialhn9h2.ufs.sh/f/5234b4e8-92e5-4934-bc32-2fe376e43760-1javl8.pdf",
     6: "https://68ialhn9h2.ufs.sh/f/5234b4e8-92e5-4934-bc32-2fe376e43760-1javl8.pdf", // TODO: Do I need to replace with with a grade-specific report card?
   };
-export const SEMESTER_WORD_MAP = {
-    1: "One",
-    2: "Two",
-}
+export const SEMESTER_WORD_MAP: { [key: string]: string } = {
+  '1': 'One',
+  '2': 'TWo',
+};
 export const GRADE_WORD_MAP = {
     1: "One",
     2: "Two",

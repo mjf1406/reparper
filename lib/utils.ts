@@ -25,7 +25,7 @@ export function formatBytes(
   }`
 }
 
-export function convertToObjectArray(obj) {
+export function convertToObjectArray<T>(obj: Record<string, T>): T[] {
   return Object.keys(obj).map(key => obj[key]);
 }
 

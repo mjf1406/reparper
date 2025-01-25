@@ -46,6 +46,7 @@ import { processData, splitByGender, transformToPDF } from "@/lib/ProcessData";
 import Image from "next/image";
 import { PDF, printPDF } from "@/lib/generatePDF";
 import { Grade } from "@/lib/constants";
+import { Data } from "@/lib/types";
 
 /**
  * Define a zod schema for your dialog form.
@@ -88,15 +89,6 @@ export default function FileUploadForm() {
             academicYearStart: "",
         },
     });
-
-    const formatTime = (time: number) => {
-        const minutes = Math.floor(time / 60000);
-        const seconds = Math.floor((time % 60000) / 1000);
-        const milliseconds = Math.floor((time % 1000) / 10); // Convert to 2-digit milliseconds
-        return `${minutes.toString().padStart(2, "0")}:${seconds
-            .toString()
-            .padStart(2, "0")}.${milliseconds.toString().padStart(2, "0")}`;
-    };
 
     async function validateAndProcessXLSX(files: File[]) {
         if (files.length === 0) {
@@ -141,7 +133,7 @@ export default function FileUploadForm() {
             setLoadingMessage("Getting the data ready!");
             setLoadingImage("/images/tired-monkey-teacher.png");
 
-            const { females, males } = splitByGender(data);
+            const { females, males } = splitByGender(data as unknown as Data);
             const femalePDFs: PDF[] = transformToPDF(females);
             const malePDFs: PDF[] = transformToPDF(males);
             await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -153,7 +145,7 @@ export default function FileUploadForm() {
                 semester,
                 "girls",
                 `${grade}-${classNumber}`,
-                parseInt(academicYearStart),
+                academicYearStart,
                 grade as Grade,
                 date,
                 name
@@ -167,7 +159,7 @@ export default function FileUploadForm() {
                 semester,
                 "boys",
                 `${grade}-${classNumber}`,
-                parseInt(academicYearStart),
+                academicYearStart,
                 grade as Grade,
                 date,
                 name

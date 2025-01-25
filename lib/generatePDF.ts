@@ -1,7 +1,6 @@
-import { CENTURY_SKILLS_FONT_SIZE, COMMENT_FONT_SIZE, COVER_PAGE_FONT_SIZE, Grade, GRADE_FORM_URLS, GRADE_WORD_MAP, prefixArray, SEMESTER_WORD_MAP, studentLetters, SUBJECT_ACHIEVEMENT_COMMENT_FONT_SIZE, TITLE_FONT_SIZE } from "./constants"
-import { Data } from "./ProcessData";
+import { CENTURY_SKILLS_FONT_SIZE, COMMENT_FONT_SIZE, COVER_PAGE_FONT_SIZE, Grade, GRADE_FORM_URLS, GRADE_WORD_MAP, SEMESTER_WORD_MAP, studentLetters, SUBJECT_ACHIEVEMENT_COMMENT_FONT_SIZE, TITLE_FONT_SIZE } from "./constants"
 import { StudentField } from "./types"
-import { PDFDocument, PDFFont } from "pdf-lib";
+import { PDFDocument } from "pdf-lib";
 import fontkit from '@pdf-lib/fontkit'
 import { formatDate } from "./utils";
 
@@ -14,7 +13,7 @@ export type PDF = {
   
 // https://pdf-lib.js.org/#fill-form
 export async function printPDF(
-    data: Data,
+    data: PDF[],
     semester: string,
     sex: string,
     className: string,
@@ -46,13 +45,13 @@ export async function printPDF(
     //   ]);
       
     const calibriFontBytes = await fetch('https://68ialhn9h2.ufs.sh/f/pK4nD7CymfwDlaxbqQtj436hbI2XTiBqMLrt1U7spvEw5ofF').then(r => r.arrayBuffer());
-    const calibriBoldFontBytes = await fetch('https://68ialhn9h2.ufs.sh/f/pK4nD7CymfwDQBe79FA3NaDc8h7ylKOFuZfwHr6o1sxzInLm').then(r => r.arrayBuffer());
+    // const calibriBoldFontBytes = await fetch('https://68ialhn9h2.ufs.sh/f/pK4nD7CymfwDQBe79FA3NaDc8h7ylKOFuZfwHr6o1sxzInLm').then(r => r.arrayBuffer());
     const cambriaBoldFontBytes = await fetch('https://68ialhn9h2.ufs.sh/f/pK4nD7CymfwDfwlmA1uCxXVGRnoBmhADsIi58ZgW2ptSTuHe').then(r => r.arrayBuffer());
     const firaSansRegularBytes = await fetch('https://68ialhn9h2.ufs.sh/f/pK4nD7CymfwDyRg3H4EsbVR3ALxUmWQezgiYId5G2H9MTPSv').then(r => r.arrayBuffer());
     const firaSansBoldBytes = await fetch('https://68ialhn9h2.ufs.sh/f/pK4nD7CymfwD1CcICKzGj4mEaiNZzkFnbyhver0O8ScVfsYp').then(r => r.arrayBuffer());
     
     const calibriFont = await pdfDoc.embedFont(calibriFontBytes);
-    const calibriBoldFont = await pdfDoc.embedFont(calibriBoldFontBytes);
+    // const calibriBoldFont = await pdfDoc.embedFont(calibriBoldFontBytes);
     const cambriaBoldFont = await pdfDoc.embedFont(cambriaBoldFontBytes);
     const firaSansRegularFont = await pdfDoc.embedFont(firaSansRegularBytes);
     const firaSansBoldFont = await pdfDoc.embedFont(firaSansBoldBytes)
@@ -96,48 +95,48 @@ export async function printPDF(
         // Long Comment
         const fieldComment = form.getTextField(`Skills/Habits 1${studentLetter}`)
         fieldComment.setFontSize(COMMENT_FONT_SIZE)
-        fieldComment.setText(studentFields.comment[`s${semester}`])
+        fieldComment.setText(studentFields.comment[`s${semester}` as keyof typeof studentFields.comment]);
         // fieldComment.updateAppearances(firaSansRegularFont) // TODO: updating this causes the function to slow down by about 10 times and to give the field an undesirable line spacing
         // Subject Achievement Comments
             // Reading
             const fieldReadingComment = form.getTextField(`Reading Text${studentLetter}${studentLetter}`);
             fieldReadingComment.setFontSize(SUBJECT_ACHIEVEMENT_COMMENT_FONT_SIZE);
-            fieldReadingComment.setText(studentFields.reading[`s${semester}_comment`].replaceAll("\r\n", "\n"));
+            fieldReadingComment.setText(studentFields.reading[`s${semester}_comment` as keyof typeof studentFields.reading].replaceAll("\r\n", "\n"));
             fieldReadingComment.updateAppearances(firaSansRegularFont);
             // Writing
             const fieldWritingComment = form.getTextField(`Writing Text${studentLetter}${studentLetter}`);
             fieldWritingComment.setFontSize(SUBJECT_ACHIEVEMENT_COMMENT_FONT_SIZE);
-            fieldWritingComment.setText(studentFields.writing[`s${semester}_comment`].replaceAll("\r\n", "\n"));
+            fieldWritingComment.setText(studentFields.writing[`s${semester}_comment` as keyof typeof studentFields.writing].replaceAll("\r\n", "\n"));
             fieldWritingComment.updateAppearances(firaSansRegularFont);
             // Speaking
             const fieldSpeakingComment = form.getTextField(`Speaking Text${studentLetter}${studentLetter}`);
             fieldSpeakingComment.setFontSize(SUBJECT_ACHIEVEMENT_COMMENT_FONT_SIZE);
-            fieldSpeakingComment.setText(studentFields.speaking[`s${semester}_comment`].replaceAll("\r\n", "\n"));
+            fieldSpeakingComment.setText(studentFields.speaking[`s${semester}_comment` as keyof typeof studentFields.speaking].replaceAll("\r\n", "\n"));
             fieldSpeakingComment.updateAppearances(firaSansRegularFont);
             // Listening
             const fieldListeningComment = form.getTextField(`Listening Text${studentLetter}${studentLetter}`);
             fieldListeningComment.setFontSize(SUBJECT_ACHIEVEMENT_COMMENT_FONT_SIZE);
-            fieldListeningComment.setText(studentFields.listening[`s${semester}_comment`].replaceAll("\r\n", "\n"));
+            fieldListeningComment.setText(studentFields.listening[`s${semester}_comment` as keyof typeof studentFields.listening].replaceAll("\r\n", "\n"));
             fieldListeningComment.updateAppearances(firaSansRegularFont);
             // Use of English
             const fieldUseOfEnglishComment = form.getTextField(`Use of English Text${studentLetter}${studentLetter}`);
             fieldUseOfEnglishComment.setFontSize(SUBJECT_ACHIEVEMENT_COMMENT_FONT_SIZE);
-            fieldUseOfEnglishComment.setText(studentFields.use_of_english[`s${semester}_comment`].replaceAll("\r\n", "\n"));
+            fieldUseOfEnglishComment.setText(studentFields.use_of_english[`s${semester}_comment` as keyof typeof studentFields.use_of_english].replaceAll("\r\n", "\n"));
             fieldUseOfEnglishComment.updateAppearances(firaSansRegularFont);
             // Math
             const fieldMathComment = form.getTextField(`math Text${studentLetter}${studentLetter}`);
             fieldMathComment.setFontSize(SUBJECT_ACHIEVEMENT_COMMENT_FONT_SIZE);
-            fieldMathComment.setText(studentFields.mathematics[`s${semester}_comment`].replaceAll("\r\n", "\n"));
+            fieldMathComment.setText(studentFields.mathematics[`s${semester}_comment` as keyof typeof studentFields.mathematics].replaceAll("\r\n", "\n"));
             fieldMathComment.updateAppearances(firaSansRegularFont);
             // Social Studies
             const fieldSocialStudiesComment = form.getTextField(`S.S Text${studentLetter}${studentLetter}`);
             fieldSocialStudiesComment.setFontSize(SUBJECT_ACHIEVEMENT_COMMENT_FONT_SIZE);
-            fieldSocialStudiesComment.setText(studentFields.social_studies[`s${semester}_comment`].replaceAll("\r\n", "\n"));
+            fieldSocialStudiesComment.setText(studentFields.social_studies[`s${semester}_comment` as keyof typeof studentFields.social_studies].replaceAll("\r\n", "\n"));
             fieldSocialStudiesComment.updateAppearances(firaSansRegularFont);
             // Science
             const fieldScienceComment = form.getTextField(`SciText${studentLetter}${studentLetter}`);
             fieldScienceComment.setFontSize(SUBJECT_ACHIEVEMENT_COMMENT_FONT_SIZE);
-            fieldScienceComment.setText(studentFields.science[`s${semester}_comment`].replaceAll("\r\n", "\n"));
+            fieldScienceComment.setText(studentFields.science[`s${semester}_comment` as keyof typeof studentFields.science].replaceAll("\r\n", "\n"));
             fieldScienceComment.updateAppearances(firaSansRegularFont);
        
         for (let sem = 1; sem <= Number(semester); sem++) {
@@ -145,83 +144,83 @@ export async function printPDF(
                 // Responsibility
                 const fieldScienceComment = form.getTextField(`Res${sem}${studentLetter}`);
                 fieldScienceComment.setFontSize(CENTURY_SKILLS_FONT_SIZE);
-                fieldScienceComment.setText(studentFields.responsibility[`s${sem}`]);
+                fieldScienceComment.setText(studentFields.responsibility[`s${sem}` as keyof typeof studentFields.responsibility]);
                 fieldScienceComment.updateAppearances(firaSansBoldFont);
                 // Organization
                 const fieldOrganizationComment = form.getTextField(`Or${sem}${studentLetter}`);
                 fieldOrganizationComment.setFontSize(CENTURY_SKILLS_FONT_SIZE);
-                fieldOrganizationComment.setText(studentFields.organization[`s${sem}`]);
+                fieldOrganizationComment.setText(studentFields.organization[`s${sem}` as keyof typeof studentFields.organization]);
                 fieldOrganizationComment.updateAppearances(firaSansBoldFont);
                 // Collaboration
                 const fieldCollaborationComment = form.getTextField(`co${sem}${studentLetter}`);
                 fieldCollaborationComment.setFontSize(CENTURY_SKILLS_FONT_SIZE);
-                fieldCollaborationComment.setText(studentFields.collaboration[`s${sem}`]);
+                fieldCollaborationComment.setText(studentFields.collaboration[`s${sem}` as keyof typeof studentFields.collaboration]);
                 fieldCollaborationComment.updateAppearances(firaSansBoldFont);
                 // Communication
                 const fieldCommunicationComment = form.getTextField(`Com${sem}${studentLetter}`);
                 fieldCommunicationComment.setFontSize(CENTURY_SKILLS_FONT_SIZE);
-                fieldCommunicationComment.setText(studentFields.communication[`s${sem}`]);
+                fieldCommunicationComment.setText(studentFields.communication[`s${sem}` as keyof typeof studentFields.communication]);
                 fieldCommunicationComment.updateAppearances(firaSansBoldFont);
                 // Thinking
                 const fieldThinkingComment = form.getTextField(`thin${sem}${studentLetter}`);
                 fieldThinkingComment.setFontSize(CENTURY_SKILLS_FONT_SIZE);
-                fieldThinkingComment.setText(studentFields.thinking[`s${sem}`]);
+                fieldThinkingComment.setText(studentFields.thinking[`s${sem}` as keyof typeof studentFields.thinking]);
                 fieldThinkingComment.updateAppearances(firaSansBoldFont);
                 // Inquiry
                 const fieldInquiryComment = form.getTextField(`inqu${sem}${studentLetter}`);
                 fieldInquiryComment.setFontSize(CENTURY_SKILLS_FONT_SIZE);
-                fieldInquiryComment.setText(studentFields.inquiry[`s${sem}`]);
+                fieldInquiryComment.setText(studentFields.inquiry[`s${sem}` as keyof typeof studentFields.inquiry]);
                 fieldInquiryComment.updateAppearances(firaSansBoldFont);
                 // Risk Taking
                 const fieldRiskTakingComment = form.getTextField(`ref${sem}${studentLetter}`);
                 fieldRiskTakingComment.setFontSize(CENTURY_SKILLS_FONT_SIZE);
-                fieldRiskTakingComment.setText(studentFields.risk_taking[`s${sem}`]);
+                fieldRiskTakingComment.setText(studentFields.risk_taking[`s${sem}` as keyof typeof studentFields.risk_taking]);
                 fieldRiskTakingComment.updateAppearances(firaSansBoldFont);
                 // Open-Minded
                 const fieldOpenMindedComment = form.getTextField(`rt${sem}${studentLetter}`);
                 fieldOpenMindedComment.setFontSize(CENTURY_SKILLS_FONT_SIZE);
-                fieldOpenMindedComment.setText(studentFields.open_minded[`s${sem}`]);
+                fieldOpenMindedComment.setText(studentFields.open_minded[`s${sem}` as keyof typeof studentFields.open_minded]);
                 fieldOpenMindedComment.updateAppearances(firaSansBoldFont);
             // Subject Achievement Scores
                 // Reading
                 const fieldReadingScore = form.getTextField(`R${sem}${studentLetter}${studentLetter}`);
                 fieldReadingScore.setFontSize(CENTURY_SKILLS_FONT_SIZE);
-                fieldReadingScore.setText(studentFields.reading[`s${sem}`]);
+                fieldReadingScore.setText(studentFields.reading[`s${sem}` as keyof typeof studentFields.reading]);
                 fieldReadingScore.updateAppearances(firaSansBoldFont);
                 // Writing
                 const fieldWritingScore = form.getTextField(`W${sem}${studentLetter}${studentLetter}`);
                 fieldWritingScore.setFontSize(CENTURY_SKILLS_FONT_SIZE);
-                fieldWritingScore.setText(studentFields.writing[`s${sem}`]);
+                fieldWritingScore.setText(studentFields.writing[`s${sem}` as keyof typeof studentFields.writing]);
                 fieldWritingScore.updateAppearances(firaSansBoldFont);
                 // Speaking
                 const fieldSpeakingScore = form.getTextField(`Sp${sem}${studentLetter}${studentLetter}`);
                 fieldSpeakingScore.setFontSize(CENTURY_SKILLS_FONT_SIZE);
-                fieldSpeakingScore.setText(studentFields.speaking[`s${sem}`]);
+                fieldSpeakingScore.setText(studentFields.speaking[`s${sem}` as keyof typeof studentFields.speaking]);
                 fieldSpeakingScore.updateAppearances(firaSansBoldFont);
                 // Listening
                 const fieldListeningScore = form.getTextField(`L${sem}${studentLetter}${studentLetter}`);
                 fieldListeningScore.setFontSize(CENTURY_SKILLS_FONT_SIZE);
-                fieldListeningScore.setText(studentFields.listening[`s${sem}`]);
+                fieldListeningScore.setText(studentFields.listening[`s${sem}` as keyof typeof studentFields.listening]);
                 fieldListeningScore.updateAppearances(firaSansBoldFont);
                 // Use of English
                 const fieldUseOfEnglishScore = form.getTextField(`UE${sem}${studentLetter}${studentLetter}`);
                 fieldUseOfEnglishScore.setFontSize(CENTURY_SKILLS_FONT_SIZE);
-                fieldUseOfEnglishScore.setText(studentFields.use_of_english[`s${sem}`]);
+                fieldUseOfEnglishScore.setText(studentFields.use_of_english[`s${sem}` as keyof typeof studentFields.use_of_english]);
                 fieldUseOfEnglishScore.updateAppearances(firaSansBoldFont);
                 // Mathematics
                 const fieldMathematicsScore = form.getTextField(`M${sem}${studentLetter}${studentLetter}`);
                 fieldMathematicsScore.setFontSize(CENTURY_SKILLS_FONT_SIZE);
-                fieldMathematicsScore.setText(studentFields.mathematics[`s${sem}`]);
+                fieldMathematicsScore.setText(studentFields.mathematics[`s${sem}` as keyof typeof studentFields.mathematics]);
                 fieldMathematicsScore.updateAppearances(firaSansBoldFont);
                 // Social Studies
                 const fieldSocialStudiesScore = form.getTextField(`SS${sem}${studentLetter}${studentLetter}`);
                 fieldSocialStudiesScore.setFontSize(CENTURY_SKILLS_FONT_SIZE);
-                fieldSocialStudiesScore.setText(studentFields.social_studies[`s${sem}`]);
+                fieldSocialStudiesScore.setText(studentFields.social_studies[`s${sem}` as keyof typeof studentFields.social_studies]);
                 fieldSocialStudiesScore.updateAppearances(firaSansBoldFont);
                 // Science
                 const fieldScienceScore = form.getTextField(`SC${sem}${studentLetter}${studentLetter}`);
                 fieldScienceScore.setFontSize(CENTURY_SKILLS_FONT_SIZE);
-                fieldScienceScore.setText(studentFields.science[`s${sem}`]);
+                fieldScienceScore.setText(studentFields.science[`s${sem}` as keyof typeof studentFields.science]);
                 fieldScienceScore.updateAppearances(firaSansBoldFont);
                 
             if (semester === "1") break

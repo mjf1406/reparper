@@ -1,7 +1,7 @@
 // processXLSXData.ts
 import * as XLSX from "xlsx";
 import { PDF } from "./generatePDF";
-import { StudentField } from "./types";
+import { Comments, StudentField } from "./types";
 
 export interface SheetData {
     [sheetName: string]: unknown;
@@ -226,14 +226,6 @@ export interface CenturySkills {
     };
 }
 
-export interface Comments {
-    [key: string]: {
-        name: string;
-        s1: number;
-        s2: number;
-    };
-}
-
 export interface Data {
     "✏️ Class Roster": { [key: string]: Student };
     "✏️ Subject Achievement Comments": { [key: string]: SubjectAchievementComments };
@@ -283,120 +275,15 @@ export function splitByGender(data: Data): SplitData {
     for (const key of otherKeys) {
         for (const [studentId, studentData] of Object.entries(data[key])) {
             if (studentId in females["✏️ Class Roster"]) {
-                females[key][studentId] = studentData as any;
+                females[key][studentId] = studentData as never;
             } else if (studentId in males["✏️ Class Roster"]) {
-                males[key][studentId] = studentData as any;
+                males[key][studentId] = studentData as never;
             }
         }
     }
 
     return { females, males };
 }
-
-// export function transformToPDF(data: Data): PDF[] {
-//     const pdfArray: PDF[] = [];
-
-//     for (const [studentId, student] of Object.entries(data["✏️ Class Roster"])) {
-//         const studentFields: StudentField = {
-//             field_id: `field_${studentId}`,
-//             student_id: studentId,
-//             collaboration: {
-//                 s1: data["✏️ 21st Century Skills, Learner"][studentId]?.s1.collaboration || "",
-//                 s2: data["✏️ 21st Century Skills, Learner"][studentId]?.s2.collaboration || "",
-//             },
-//             communication: {
-//                 s1: data["✏️ 21st Century Skills, Learner"][studentId]?.s1.communication || "",
-//                 s2: data["✏️ 21st Century Skills, Learner"][studentId]?.s2.communication || "",
-//             },
-//             inquiry: {
-//                 s1: data["✏️ 21st Century Skills, Learner"][studentId]?.s1.inquiry || "",
-//                 s2: data["✏️ 21st Century Skills, Learner"][studentId]?.s2.inquiry || "",
-//             },
-//             listening: {
-//                 s1: data["✏️ Subject Achievement Scores"][studentId]?.s1.listening?.toString() || "",
-//                 s1_comment: data["✏️ Subject Achievement Comments"][studentId]?.Listening?.S1 || "",
-//                 s2: data["✏️ Subject Achievement Scores"][studentId]?.s2.listening?.toString() || "",
-//                 s2_comment: data["✏️ Subject Achievement Comments"][studentId]?.Listening?.S2 || "",
-//             },
-//             mathematics: {
-//                 s1: data["✏️ Subject Achievement Scores"][studentId]?.s1.math?.toString() || "",
-//                 s1_comment: data["✏️ Subject Achievement Comments"][studentId]?.Maths?.S1 || "",
-//                 s2: data["✏️ Subject Achievement Scores"][studentId]?.s2.math?.toString() || "",
-//                 s2_comment: data["✏️ Subject Achievement Comments"][studentId]?.Maths?.S2 || "",
-//             },
-//             open_minded: {
-//                 s1: data["✏️ 21st Century Skills, Learner"][studentId]?.s1["open-minded"] || "",
-//                 s2: data["✏️ 21st Century Skills, Learner"][studentId]?.s2["open-minded"] || "",
-//             },
-//             organization: {
-//                 s1: data["✏️ 21st Century Skills, Learner"][studentId]?.s1.organisation || "",
-//                 s2: data["✏️ 21st Century Skills, Learner"][studentId]?.s2.organisation || "",
-//             },
-//             reading: {
-//                 s1: data["✏️ Subject Achievement Scores"][studentId]?.s1.reading?.toString() || "",
-//                 s1_comment: data["✏️ Subject Achievement Comments"][studentId]?.Reading?.S1 || "",
-//                 s2: data["✏️ Subject Achievement Scores"][studentId]?.s2.reading?.toString() || "",
-//                 s2_comment: data["✏️ Subject Achievement Comments"][studentId]?.Reading?.S2 || "",
-//             },
-//             responsibility: {
-//                 s1: data["✏️ 21st Century Skills, Learner"][studentId]?.s1.responsibility || "",
-//                 s2: data["✏️ 21st Century Skills, Learner"][studentId]?.s2.responsibility || "",
-//             },
-//             risk_taking: {
-//                 s1: data["✏️ 21st Century Skills, Learner"][studentId]?.s1["risk-taking"] || "",
-//                 s2: data["✏️ 21st Century Skills, Learner"][studentId]?.s2["risk-taking"] || "",
-//             },
-//             science: {
-//                 s1: data["✏️ Subject Achievement Scores"][studentId]?.s1.science?.toString() || "",
-//                 s1_comment: data["✏️ Subject Achievement Comments"][studentId]?.Science?.S1 || "",
-//                 s2: data["✏️ Subject Achievement Scores"][studentId]?.s2.science?.toString() || "",
-//                 s2_comment: data["✏️ Subject Achievement Comments"][studentId]?.Science?.S2 || "",
-//             },
-//             social_studies: {
-//                 s1: data["✏️ Subject Achievement Scores"][studentId]?.s1.socstudies?.toString() || "",
-//                 s1_comment: data["✏️ Subject Achievement Comments"][studentId]?.["Social Studies"]?.S1 || "",
-//                 s2: data["✏️ Subject Achievement Scores"][studentId]?.s2.socstudies?.toString() || "",
-//                 s2_comment: data["✏️ Subject Achievement Comments"][studentId]?.["Social Studies"]?.S2 || "",
-//             },
-//             speaking: {
-//                 s1: data["✏️ Subject Achievement Scores"][studentId]?.s1.speaking?.toString() || "",
-//                 s1_comment: data["✏️ Subject Achievement Comments"][studentId]?.Speaking?.S1 || "",
-//                 s2: data["✏️ Subject Achievement Scores"][studentId]?.s2.speaking?.toString() || "",
-//                 s2_comment: data["✏️ Subject Achievement Comments"][studentId]?.Speaking?.S2 || "",
-//             },
-//             thinking: {
-//                 s1: data["✏️ 21st Century Skills, Learner"][studentId]?.s1.thinking || "",
-//                 s2: data["✏️ 21st Century Skills, Learner"][studentId]?.s2.thinking || "",
-//             },
-//             use_of_english: {
-//                 s1: data["✏️ Subject Achievement Scores"][studentId]?.s1.uoe?.toString() || "",
-//                 s1_comment: data["✏️ Subject Achievement Comments"][studentId]?.["Use of English"]?.S1 || "",
-//                 s2: data["✏️ Subject Achievement Scores"][studentId]?.s2.uoe?.toString() || "",
-//                 s2_comment: data["✏️ Subject Achievement Comments"][studentId]?.["Use of English"]?.S2 || "",
-//             },
-//             writing: {
-//                 s1: data["✏️ Subject Achievement Scores"][studentId]?.s1.writing?.toString() || "",
-//                 s1_comment: data["✏️ Subject Achievement Comments"][data["✏️ Subject Achievement Scores"][studentId]?.s1.writing]?.Writing?.S1 || "",
-//                 s2: data["✏️ Subject Achievement Scores"][studentId]?.s2.writing?.toString() || "",
-//                 s2_comment: data["✏️ Subject Achievement Comments"][data["✏️ Subject Achievement Scores"][studentId]?.s2.writing]?.Writing?.S2 || "",
-//             },
-//             comment: {
-//                 s1: data["✏️ Comments"][studentId]?.s1?.toString() || "",
-//                 s2: data["✏️ Comments"][studentId]?.s2?.toString() || "",
-//             },
-//         };
-
-//         const pdf: PDF = {
-//             student_name: student.Name,
-//             student_number: student.Number.toString(),
-//             student_fields: studentFields,
-//         };
-
-//         pdfArray.push(pdf);
-//     }
-
-//     return pdfArray;
-// }
 
 export function transformToPDF(data: Data): PDF[] {
     const pdfArray: PDF[] = [];

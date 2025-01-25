@@ -6,10 +6,11 @@ Easily fill out your Younghoon report cards with the magic of programming.
 
 ### p0
 
--   BE: use can now upload report card template
     -   this is needed because the Subject Achievement Comments (\_og) change on a semester basis and might also change on a grade basis.
+
 -   PDF: long comment also needs some padding
 -   PDF: Subject Achievement Comments need some padding
+-   BE: use can now upload report card template
 
 ## Change Log
 
