@@ -6,11 +6,13 @@ Easily fill out your Younghoon report cards with the magic of programming.
 
 ### p0
 
+-   BE: make the Gradebook Google Sheet have a better UX to share with teachers
+-   UX: user can no upload report card templates
     -   this is needed because the Subject Achievement Comments (\_og) change on a semester basis and might also change on a grade basis.
-
 -   PDF: long comment also needs some padding
 -   PDF: Subject Achievement Comments need some padding
 -   BE: use can now upload report card template
+-   UX: I need to update the Instructions sheet and ensure there is also a demo template filled with synthetic data
 
 ## Change Log
 
