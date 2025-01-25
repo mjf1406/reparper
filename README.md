@@ -8,16 +8,16 @@ Easily fill out your Younghoon report cards with the magic of programming.
 
 -   BE: use can now upload report card template
     -   this is needed because the Subject Achievement Comments (\_og) change on a semester basis and might also change on a grade basis.
--   PDF: need to make sure the fonts are the correct fonts. Using custom fonts makes the generation SOO slow.
 -   PDF: long comment also needs some padding
 -   PDF: Subject Achievement Comments need some padding
--   PDF: Subject Achievement Scores should be bold
--   PDF: 2st Century Skills Scores should be bold
 
 ## Change Log
 
 2025/01/25
 
+-   PDF: need to make sure the fonts are the correct fonts. Using custom fonts in the long comment field (Skills/Habits) makes the generation SOO slow for some reason, so we've skipped it. It also gives the text an undesirable line spacing.
+-   PDF: Subject Achievement Scores should be bold
+-   PDF: 2st Century Skills Scores should be bold
 -   BE: data is mapped to the correct fields
 -   UX: PDFs are generated and downloaded
 -   BE: data is ingested into state

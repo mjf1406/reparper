@@ -74,11 +74,9 @@ export default function FileUploadForm() {
         "/path/to/default/image.png"
     );
 
-    // Generate dynamic year options
     const currentYear = new Date().getFullYear();
     const academicYearOptions = [currentYear - 1, currentYear, currentYear + 1];
 
-    // Initialize the form using react-hook-form and zod
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -87,14 +85,19 @@ export default function FileUploadForm() {
             grade: "",
             classNumber: "",
             semester: "",
-            academicYearStart: "", // Add default value for the new field
+            academicYearStart: "",
         },
     });
 
-    /**
-     * Placeholder function: run any validation or data processing here
-     * when files are uploaded.
-     */
+    const formatTime = (time: number) => {
+        const minutes = Math.floor(time / 60000);
+        const seconds = Math.floor((time % 60000) / 1000);
+        const milliseconds = Math.floor((time % 1000) / 10); // Convert to 2-digit milliseconds
+        return `${minutes.toString().padStart(2, "0")}:${seconds
+            .toString()
+            .padStart(2, "0")}.${milliseconds.toString().padStart(2, "0")}`;
+    };
+
     async function validateAndProcessXLSX(files: File[]) {
         if (files.length === 0) {
             toast.error("No file uploaded!");
@@ -120,24 +123,18 @@ export default function FileUploadForm() {
         reader.readAsBinaryString(file);
     }
 
-    /**
-     * This would be your "submit" flow— run automatically after a successful upload.
-     */
     async function handleSubmit(files: File[]) {
-        // Here you could make an API call, etc.
         console.log(files);
     }
 
-    /**
-     * Handle the final form submission inside the dialog.
-     */
     async function onDialogSubmit(values: FormValues) {
+        const startTime = new Date();
         const classNumber = values.classNumber;
         const date = values.date;
         const grade = values.grade;
         const name = values.name;
         const semester = values.semester;
-        const academicYearStart = values.academicYearStart; // Extract academic year start
+        const academicYearStart = values.academicYearStart;
 
         try {
             setIsLoading(true);
@@ -148,20 +145,6 @@ export default function FileUploadForm() {
             const femalePDFs: PDF[] = transformToPDF(females);
             const malePDFs: PDF[] = transformToPDF(males);
             await new Promise((resolve) => setTimeout(resolve, 3000));
-
-            // setLoadingMessage("Generating boy PDF!");
-            // setLoadingImage("/images/boy-monkey-working.png");
-            // await printPDF(
-            //     malePDFs,
-            //     semester,
-            //     "boys",
-            //     `${grade}-${classNumber}`,
-            //     parseInt(academicYearStart),
-            //     grade as Grade,
-            //     date,
-            //     name
-            // );
-            // await new Promise((resolve) => setTimeout(resolve, 1000));
 
             setLoadingMessage("Generating girl PDF!");
             setLoadingImage("/images/girl-monkey-working.png");
@@ -177,7 +160,19 @@ export default function FileUploadForm() {
             );
             await new Promise((resolve) => setTimeout(resolve, 1000));
 
-            return;
+            setLoadingMessage("Generating boy PDF!");
+            setLoadingImage("/images/boy-monkey-working.png");
+            await printPDF(
+                malePDFs,
+                semester,
+                "boys",
+                `${grade}-${classNumber}`,
+                parseInt(academicYearStart),
+                grade as Grade,
+                date,
+                name
+            );
+            await new Promise((resolve) => setTimeout(resolve, 1000));
 
             setLoadingMessage("All done!");
             setLoadingImage("/images/happy-monkey-teacher.png");
@@ -190,12 +185,22 @@ export default function FileUploadForm() {
             setLoadingImage("/path/to/error/image.png");
         } finally {
             setIsLoading(false);
+
+            const endTime = new Date();
+            const duration = endTime.getTime() - startTime.getTime();
+            const minutes = Math.floor(duration / 60000);
+            const seconds = ((duration % 60000) / 1000).toFixed(3);
+
+            if (minutes > 0) {
+                console.log(`${minutes}m ${seconds}s`);
+            } else {
+                console.log(`${seconds}s`);
+            }
         }
     }
 
     return (
         <>
-            {/* File Upload Form */}
             <form className="flex flex-col gap-4 max-w-xl mx-auto">
                 <FileUploader
                     accept={{
@@ -226,7 +231,6 @@ export default function FileUploadForm() {
                 </div>
             )}
 
-            {/* Shadcn Dialog with a Form inside */}
             <Dialog
                 open={openDialog}
                 onOpenChange={setOpenDialog}
@@ -239,13 +243,11 @@ export default function FileUploadForm() {
                         </DialogDescription>
                     </DialogHeader>
 
-                    {/* Use the shadcn <Form> component with react-hook-form */}
                     <Form {...form}>
                         <form
                             onSubmit={form.handleSubmit(onDialogSubmit)}
                             className="space-y-4"
                         >
-                            {/* Date */}
                             <FormField
                                 control={form.control}
                                 name="date"
@@ -267,7 +269,6 @@ export default function FileUploadForm() {
                                 )}
                             />
 
-                            {/* Name */}
                             <FormField
                                 control={form.control}
                                 name="name"
@@ -291,7 +292,6 @@ export default function FileUploadForm() {
                                 )}
                             />
 
-                            {/* Grade */}
                             <FormField
                                 control={form.control}
                                 name="grade"
@@ -333,7 +333,6 @@ export default function FileUploadForm() {
                                 )}
                             />
 
-                            {/* Class Number */}
                             <FormField
                                 control={form.control}
                                 name="classNumber"
@@ -369,7 +368,6 @@ export default function FileUploadForm() {
                                 )}
                             />
 
-                            {/* Semester */}
                             <FormField
                                 control={form.control}
                                 name="semester"
@@ -399,7 +397,6 @@ export default function FileUploadForm() {
                                 )}
                             />
 
-                            {/* Academic Year Start */}
                             <FormField
                                 control={form.control}
                                 name="academicYearStart"
@@ -446,7 +443,6 @@ export default function FileUploadForm() {
                         </form>
                     </Form>
 
-                    {/* Loading Backdrop */}
                     {isLoading && (
                         <div className="absolute inset-0 bg-background/80 flex flex-col items-center justify-center gap-4">
                             <Image
@@ -459,6 +455,12 @@ export default function FileUploadForm() {
                             <p className="text-3xl font-semibold">
                                 {loadingMessage}
                             </p>
+                            <div className="flex flex-col justify-center items-center gap-3">
+                                <div className="mx-auto w-full text-center">
+                                    This shouldn&apos;t take more than a
+                                    minute—hang in there!
+                                </div>
+                            </div>
                         </div>
                     )}
                 </DialogContent>
