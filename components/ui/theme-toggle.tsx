@@ -18,7 +18,22 @@ export function ThemeToggle() {
         setMounted(true);
     }, []);
 
-    if (!mounted) return null;
+    if (!mounted) {
+        // Return a placeholder with the same dimensions during SSR
+        return (
+            <Button
+                variant="ghost"
+                style={{
+                    height: `${SIZE}px`,
+                    width: `${SIZE}px`,
+                    position: "relative",
+                }}
+                aria-hidden
+            >
+                <div style={{ width: SIZE, height: SIZE }} />
+            </Button>
+        );
+    }
 
     const isDark = theme === "dark";
 

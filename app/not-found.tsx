@@ -22,7 +22,7 @@ export default function Custom404() {
                     <CardDescription>404 Not Found</CardDescription>
                     {/* Fun SVG Art */}
                     <Image
-                        src="/sprouty-404.png" // Ensure you have this SVG in your public/images directory
+                        src="/images/404-monkey.png" // Ensure you have this SVG in your public/images directory
                         alt="Funny Robot"
                         width={300}
                         height={300}

@@ -1,5 +1,7 @@
 "use client";
 
+// cspell:ignore openxmlformats officedocument spreadsheetml
+
 import * as React from "react";
 import Image from "next/image";
 import { FileText, Upload, X, Check } from "lucide-react";
@@ -13,22 +15,21 @@ import { useControllableState } from "@/hooks/use-controllable-state";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
-/** Adjust this to your shadcn Alert component path */
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 /**
- * Define a lookup for MIME types => user-friendly labels.
- * Add or customize as you wish.
+ * Moved the PDF filename pattern outside the component
+ * (to avoid creating a new RegExp on every render).
  */
-const MIME_TYPE_LABELS: Record<string, string> = {
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
-        "Microsoft Excel (.xlsx)",
-    "image/*": "Images",
-    "application/pdf": "PDF Files",
-    // etc.
-};
+const PDF_FILENAME_PATTERN =
+    /^[1-6]-[1-4]\sS[12]\s(?:Boys|Girls)\s\d{4}-\d{2}$/;
 
-interface FileUploaderProps extends React.HTMLAttributes<HTMLDivElement> {
+/**
+ * By extending Omit<React.HTMLAttributes<HTMLDivElement>, "onDrop">,
+ * we avoid type conflicts with the HTML onDrop vs. react-dropzone's onDrop.
+ */
+interface FileUploaderProps
+    extends Omit<React.HTMLAttributes<HTMLDivElement>, "onDrop"> {
     /**
      * Value of the uploader.
      */
@@ -40,12 +41,12 @@ interface FileUploaderProps extends React.HTMLAttributes<HTMLDivElement> {
     onValueChange?: (files: File[]) => void;
 
     /**
-     * Function to be called when files are uploaded.
+     * Function to be called when both files are fully ready to be processed.
      */
     onUpload?: (files: File[]) => Promise<void>;
 
     /**
-     * Progress of the uploaded files.
+     * Optional progress for each file, if needed.
      */
     progresses?: Record<string, number>;
 
@@ -77,6 +78,9 @@ interface FileUploaderProps extends React.HTMLAttributes<HTMLDivElement> {
 
 type UploadState = "idle" | "uploading" | "success";
 
+/**
+ * FileUploader
+ */
 export function FileUploader(props: FileUploaderProps) {
     const {
         value: valueProp,
@@ -84,115 +88,158 @@ export function FileUploader(props: FileUploaderProps) {
         onUpload,
         progresses,
         accept = {
-            "image/*": [],
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+                [],
+            "application/pdf": [],
         },
-        maxSize = 1024 * 1024 * 2,
-        maxFileCount = 1,
-        multiple = false,
+        maxSize = 1024 * 1024 * 15, // e.g. 15 MB
+        maxFileCount = 2,
+        multiple = true,
         disabled = false,
         className,
         ...dropzoneProps
     } = props;
+
+    // Prevent passing an incompatible onError to Dropzone
+    const { onError: _unusedOnError, ...restDropzoneProps } = dropzoneProps;
+    if (_unusedOnError) console.error(_unusedOnError);
 
     const [files, setFiles] = useControllableState({
         prop: valueProp,
         onChange: onValueChange,
     });
 
-    // Track overall upload state for the drop zone
     const [uploadState, setUploadState] = React.useState<UploadState>("idle");
-
-    // Store any errors here to display them below the drop zone
     const [uploadErrors, setUploadErrors] = React.useState<string[]>([]);
-
-    /**
-     * Returns a single string listing all accepted mime-types or patterns
-     * in a user-friendly manner.
-     */
-    function getFriendlyAcceptLabels(): string {
-        if (!accept) return "";
-        const mimeTypes = Object.keys(accept);
-        return mimeTypes
-            .map((mime) => MIME_TYPE_LABELS[mime] ?? mime)
-            .join(", ");
-    }
 
     const onDrop = React.useCallback(
         (acceptedFiles: File[], rejectedFiles: FileRejection[]) => {
             // Clear errors on each new drop
             setUploadErrors([]);
+            // We'll re-check the file state, so revert to "idle" for partial messages
             setUploadState("idle");
 
-            // 1) Check for max file count
-            if (!multiple && maxFileCount === 1 && acceptedFiles.length > 1) {
-                setUploadErrors((prev) => [
-                    ...prev,
-                    "Cannot upload more than 1 file at a time.",
-                ]);
-                return;
+            const newErrors: string[] = [];
+            const newValidFiles: File[] = [];
+
+            // 1) Validate each accepted file
+            for (const file of acceptedFiles) {
+                // 1a) Check overall file count
+                if ((files?.length ?? 0) + newValidFiles.length >= 2) {
+                    newErrors.push(
+                        "Cannot upload more than 2 files (1 XLSX + 1 PDF)."
+                    );
+                    continue;
+                }
+
+                // 1b) Validate XLSX
+                if (
+                    file.type ===
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                ) {
+                    if (!file.name.includes("Reparper Template")) {
+                        newErrors.push(
+                            `XLSX "${file.name}" must contain "Reparper Template" in its name.`
+                        );
+                        continue;
+                    }
+                    // Ensure we haven't already got an XLSX
+                    const alreadyHasXlsx = [
+                        ...(files ?? []),
+                        ...newValidFiles,
+                    ].some(
+                        (f) =>
+                            f.type ===
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    );
+                    if (alreadyHasXlsx) {
+                        newErrors.push("You can only upload one XLSX file.");
+                        continue;
+                    }
+                }
+                // 1c) Validate PDF
+                else if (file.type === "application/pdf") {
+                    const filenameWithoutExtension = file.name.replace(
+                        /\.pdf$/i,
+                        ""
+                    );
+                    if (!PDF_FILENAME_PATTERN.test(filenameWithoutExtension)) {
+                        newErrors.push(
+                            `PDF "${file.name}" does not match the naming pattern (e.g. "5-4 S2 Girls 2024-25").`
+                        );
+                        continue;
+                    }
+                    // Ensure we haven't already got a PDF
+                    const alreadyHasPdf = [
+                        ...(files ?? []),
+                        ...newValidFiles,
+                    ].some((f) => f.type === "application/pdf");
+                    if (alreadyHasPdf) {
+                        newErrors.push("You can only upload one PDF file.");
+                        continue;
+                    }
+                }
+                // 1d) Invalid type
+                else {
+                    newErrors.push(
+                        `File "${file.name}" is not a supported file type.`
+                    );
+                    continue;
+                }
+
+                // 1e) Passed checks -> store w/ preview
+                newValidFiles.push(
+                    Object.assign(file, {
+                        preview: URL.createObjectURL(file),
+                    })
+                );
             }
-            if ((files?.length ?? 0) + acceptedFiles.length > maxFileCount) {
-                setUploadErrors((prev) => [
-                    ...prev,
-                    `Cannot upload more than ${maxFileCount} file${
-                        maxFileCount > 1 ? "s" : ""
-                    }.`,
-                ]);
+
+            // 2) Handle rejections from Dropzone
+            if (rejectedFiles.length > 0) {
+                const rejections = rejectedFiles.flatMap(({ file, errors }) => {
+                    return errors.map((err) => {
+                        switch (err.code) {
+                            case "file-invalid-type":
+                                return `File "${file.name}" is not a supported file type.`;
+                            case "file-too-large":
+                                return `File "${
+                                    file.name
+                                }" exceeds the max size of ${formatBytes(
+                                    maxSize as number
+                                )}.`;
+                            default:
+                                return `File "${file.name}" was rejected: ${err.message}`;
+                        }
+                    });
+                });
+                newErrors.push(...rejections);
+            }
+
+            // 3) If we have new errors, do not add files
+            if (newErrors.length > 0) {
+                setUploadErrors(newErrors);
                 return;
             }
 
-            // 2) Map accepted files, build preview
-            const newFiles = acceptedFiles.map((file) =>
-                Object.assign(file, {
-                    preview: URL.createObjectURL(file),
-                })
-            );
-            const updatedFiles = files ? [...files, ...newFiles] : newFiles;
+            // 4) No new errors => merge new valid files with existing
+            const updatedFiles = [...(files ?? []), ...newValidFiles];
             setFiles(updatedFiles);
 
-            // 3) Handle rejections and show them as shadcn Alerts
-            if (rejectedFiles.length > 0) {
-                const friendlyAcceptText = getFriendlyAcceptLabels();
+            // 5) Check if we *now* have both XLSX and PDF
+            const hasXlsx = updatedFiles.some((f) =>
+                f.type.includes("spreadsheetml")
+            );
+            const hasPdf = updatedFiles.some(
+                (f) => f.type === "application/pdf"
+            );
 
-                const newErrors: string[] = rejectedFiles.flatMap(
-                    ({ file, errors }) => {
-                        return errors.map((e) => {
-                            switch (e.code) {
-                                case "file-invalid-type":
-                                    return `File "${file.name}" is not a supported file type. 
-Supported types: ${friendlyAcceptText}.`;
-
-                                case "file-too-large":
-                                    return `File "${
-                                        file.name
-                                    }" exceeds the max size of ${formatBytes(
-                                        maxSize as number
-                                    )}.`;
-
-                                default:
-                                    return `File "${file.name}" was rejected: ${e.message}`;
-                            }
-                        });
-                    }
-                );
-                setUploadErrors((prev) => [...prev, ...newErrors]);
-            }
-
-            // 4) If onUpload is given, attempt to upload
-            if (
-                onUpload &&
-                updatedFiles.length > 0 &&
-                updatedFiles.length <= maxFileCount &&
-                rejectedFiles.length === 0
-            ) {
-                // Start “uploading” state
+            if (onUpload && hasXlsx && hasPdf) {
+                // We have both files, so let's call onUpload
                 setUploadState("uploading");
-
                 onUpload(updatedFiles)
                     .then(() => {
                         setUploadState("success");
-                        // If you want to clear files once uploaded, do:
-                        // setFiles([]);
                     })
                     .catch((err) => {
                         setUploadErrors((prev) => [
@@ -201,18 +248,12 @@ Supported types: ${friendlyAcceptText}.`;
                         ]);
                         setUploadState("idle");
                     });
+            } else {
+                // Otherwise, remain "idle" so user sees partial instructions
+                setUploadState("idle");
             }
         },
-        [
-            accept,
-            files,
-            maxFileCount,
-            multiple,
-            onUpload,
-            setFiles,
-            maxSize,
-            getFriendlyAcceptLabels,
-        ]
+        [files, maxSize, onUpload, setFiles]
     );
 
     function onRemove(index: number) {
@@ -220,56 +261,59 @@ Supported types: ${friendlyAcceptText}.`;
         const newFiles = files.filter((_, i) => i !== index);
         setFiles(newFiles);
         onValueChange?.(newFiles);
+
+        // If we remove a file, revert to "idle" and clear errors
+        setUploadState("idle");
+        setUploadErrors([]);
     }
 
-    // Revoke preview url when component unmounts
+    // Cleanup previews on unmount
     React.useEffect(() => {
         return () => {
-            if (!files) return;
-            files.forEach((file) => {
+            files?.forEach((file) => {
                 if (isFileWithPreview(file)) {
                     URL.revokeObjectURL(file.preview);
                 }
             });
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+        // We only want to run this once on unmount, so no deps here.
+    }, [files]);
 
     const isDisabled = disabled || (files?.length ?? 0) >= maxFileCount;
 
     return (
-        <div className="relative flex w-[600px] flex-col gap-6 overflow-hidden bg-foreground/5 mx-auto">
+        <div className="relative mx-auto flex w-[600px] flex-col gap-6 overflow-hidden bg-foreground/5">
             <Dropzone
                 onDrop={onDrop}
                 accept={accept}
                 maxSize={maxSize}
                 maxFiles={maxFileCount}
-                multiple={maxFileCount > 1 || multiple}
+                multiple={multiple}
                 disabled={isDisabled}
+                {...restDropzoneProps}
             >
                 {({ getRootProps, getInputProps, isDragActive }) => {
-                    // Conditionally render content in the drop zone based on uploadState
                     let dropzoneContent: React.ReactNode;
 
                     if (uploadState === "uploading") {
-                        // Show spinning upload icon + text
+                        // Show “uploading…” spinner
                         dropzoneContent = (
-                            <div className="flex flex-col items-center justify-center gap-4 sm:px-5 transition-all duration-300">
+                            <div className="flex flex-col items-center justify-center gap-4 transition-all duration-300 sm:px-5">
                                 <div className="rounded-full border border-dashed border-muted-foreground p-3">
                                     <Upload
-                                        className="size-7 text-muted-foreground animate-spin"
+                                        className="size-7 animate-spin text-muted-foreground"
                                         aria-hidden="true"
                                     />
                                 </div>
                                 <p className="font-medium text-muted-foreground">
-                                    Uploading your file...
+                                    Uploading your files...
                                 </p>
                             </div>
                         );
                     } else if (uploadState === "success") {
-                        // Show checkmark + success text
+                        // Show final success message
                         dropzoneContent = (
-                            <div className="flex flex-col items-center justify-center gap-4 sm:px-5 transition-all duration-300">
+                            <div className="flex flex-col items-center justify-center gap-4 transition-all duration-300 sm:px-5">
                                 <div className="rounded-full border border-dashed border-green-500 p-3">
                                     <Check
                                         className="size-7 text-green-800 dark:text-green-500"
@@ -277,15 +321,37 @@ Supported types: ${friendlyAcceptText}.`;
                                     />
                                 </div>
                                 <p className="font-medium text-green-800 dark:text-green-500">
-                                    Template uploaded successfully!
+                                    Files uploaded successfully!
                                 </p>
                             </div>
                         );
                     } else {
-                        // uploadState = "idle"
-                        if (isDragActive) {
+                        // "idle" => show partial instructions
+                        const hasXlsx = files?.some((f) =>
+                            f.type.includes("spreadsheetml")
+                        );
+                        const hasPdf = files?.some(
+                            (f) => f.type === "application/pdf"
+                        );
+
+                        if (hasXlsx && hasPdf) {
                             dropzoneContent = (
-                                <div className="flex flex-col items-center justify-center gap-4 sm:px-5 opacity-50">
+                                <div className="flex flex-col items-center justify-center gap-4 transition-all duration-300 sm:px-5">
+                                    <div className="rounded-full border border-dashed border-green-500 p-3">
+                                        <Check
+                                            className="size-7 text-green-800 dark:text-green-500"
+                                            aria-hidden="true"
+                                        />
+                                    </div>
+                                    <p className="font-medium text-green-800 dark:text-green-500">
+                                        Both files present! Ready to finalize.
+                                    </p>
+                                </div>
+                            );
+                        } else if (hasXlsx && !hasPdf) {
+                            // XLSX present, need PDF
+                            dropzoneContent = isDragActive ? (
+                                <div className="flex flex-col items-center justify-center gap-4 opacity-50 sm:px-5">
                                     <div className="rounded-full border border-dashed border-muted-foreground p-3">
                                         <Upload
                                             className="size-7 text-muted-foreground"
@@ -293,12 +359,68 @@ Supported types: ${friendlyAcceptText}.`;
                                         />
                                     </div>
                                     <p className="font-medium text-muted-foreground">
-                                        Drop it like it&apos;s hot!
+                                        Drop your PDF now!
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center gap-4 sm:px-5">
+                                    <div className="rounded-full border border-dashed border-muted-foreground p-3">
+                                        <Upload
+                                            className="size-7 text-muted-foreground"
+                                            aria-hidden="true"
+                                        />
+                                    </div>
+                                    <p className="font-medium text-muted-foreground">
+                                        Just the PDF left!
+                                        <br />
+                                        Drag & drop it here or click to browse.
+                                    </p>
+                                </div>
+                            );
+                        } else if (!hasXlsx && hasPdf) {
+                            // PDF present, need XLSX
+                            dropzoneContent = isDragActive ? (
+                                <div className="flex flex-col items-center justify-center gap-4 opacity-50 sm:px-5">
+                                    <div className="rounded-full border border-dashed border-muted-foreground p-3">
+                                        <Upload
+                                            className="size-7 text-muted-foreground"
+                                            aria-hidden="true"
+                                        />
+                                    </div>
+                                    <p className="font-medium text-muted-foreground">
+                                        Drop your XLSX now!
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center gap-4 sm:px-5">
+                                    <div className="rounded-full border border-dashed border-muted-foreground p-3">
+                                        <Upload
+                                            className="size-7 text-muted-foreground"
+                                            aria-hidden="true"
+                                        />
+                                    </div>
+                                    <p className="font-medium text-muted-foreground">
+                                        Just the XLSX left!
+                                        <br />
+                                        Drag & drop it here or click to browse.
                                     </p>
                                 </div>
                             );
                         } else {
-                            dropzoneContent = (
+                            // Neither file
+                            dropzoneContent = isDragActive ? (
+                                <div className="flex flex-col items-center justify-center gap-4 opacity-50 sm:px-5">
+                                    <div className="rounded-full border border-dashed border-muted-foreground p-3">
+                                        <Upload
+                                            className="size-7 text-muted-foreground"
+                                            aria-hidden="true"
+                                        />
+                                    </div>
+                                    <p className="font-medium text-muted-foreground">
+                                        Drop it like it’s hot!
+                                    </p>
+                                </div>
+                            ) : (
                                 <div className="flex flex-col items-center justify-center gap-4 sm:px-5">
                                     <div className="rounded-full border border-dashed border-muted-foreground p-3">
                                         <Upload
@@ -308,11 +430,12 @@ Supported types: ${friendlyAcceptText}.`;
                                     </div>
                                     <div className="flex flex-col gap-px">
                                         <p className="font-medium text-muted-foreground">
-                                            Drag &apos;n&apos; drop{" "}
-                                            <i>Reparper Template.xlsx</i> here.
+                                            Drag &apos;n&apos; drop your{" "}
+                                            <i>Reparper Template.xlsx</i> and{" "}
+                                            <i>Report Card Template</i> here.
                                         </p>
                                         <p className="text-sm text-muted-foreground/70">
-                                            Or click to browse for the file.
+                                            Or click to browse for them.
                                         </p>
                                     </div>
                                 </div>
@@ -325,12 +448,11 @@ Supported types: ${friendlyAcceptText}.`;
                             {...getRootProps()}
                             className={cn(
                                 "group relative grid h-80 w-full cursor-pointer place-items-center rounded-lg border-2 border-dashed border-muted-foreground/25 px-5 py-2.5 text-center transition hover:bg-muted/25",
-                                "ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background",
                                 isDragActive && "border-muted-foreground/50",
                                 isDisabled && "pointer-events-none opacity-60",
                                 className
                             )}
-                            {...dropzoneProps}
                         >
                             <input {...getInputProps()} />
                             {dropzoneContent}
@@ -339,7 +461,7 @@ Supported types: ${friendlyAcceptText}.`;
                 }}
             </Dropzone>
 
-            {/* Show errors below the drop zone */}
+            {/* Show any errors */}
             {uploadErrors.length > 0 && (
                 <div className="flex flex-col gap-2 px-4">
                     {uploadErrors.map((error, idx) => (
@@ -355,11 +477,11 @@ Supported types: ${friendlyAcceptText}.`;
                 </div>
             )}
 
-            {/* List of files (if any) */}
+            {/* File List */}
             {files?.length ? (
                 <ScrollArea className="h-fit w-full px-3">
                     <div className="flex max-h-48 flex-col gap-4">
-                        {files?.map((file, index) => (
+                        {files.map((file, index) => (
                             <FileCard
                                 key={index}
                                 file={file}
@@ -374,6 +496,9 @@ Supported types: ${friendlyAcceptText}.`;
     );
 }
 
+/**
+ * FileCard + helpers
+ */
 interface FileCardProps {
     file: File;
     onRemove: () => void;
@@ -439,7 +564,7 @@ function FilePreview({ file }: FilePreviewProps) {
             />
         );
     }
-
+    // For non-image files, show a generic file icon
     return (
         <FileText
             className="size-10 text-muted-foreground"

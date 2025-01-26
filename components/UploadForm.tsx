@@ -38,19 +38,19 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 
-/**
- * The FileUploader component
- */
-import { FileUploader } from "./ui/file-uploader";
-import { processData, splitByGender, transformToPDF } from "@/lib/ProcessData";
+// Local imports
 import Image from "next/image";
+import { processData, splitByGender, transformToPDF } from "@/lib/ProcessData";
 import { PDF, printPDF } from "@/lib/generatePDF";
 import { Grade } from "@/lib/constants";
 import { Data } from "@/lib/types";
 
+// Example FileUploader from your snippet
+import { FileUploader } from "./ui/file-uploader";
+
 /**
- * Define a zod schema for your dialog form.
- * Adjust the schema as needed for your real validation requirements.
+ * Zod schema for the additional form data in the dialog.
+ * Adjust fields & validations as needed.
  */
 const formSchema = z.object({
     date: z.string().nonempty("Please select a date."),
@@ -60,24 +60,35 @@ const formSchema = z.object({
     semester: z.string().min(1, "Please select a semester."),
     academicYearStart: z
         .string()
-        .min(1, "Please select an academic year start."), // Add this line
+        .min(1, "Please select an academic year start."),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
 export default function FileUploadForm() {
-    const [files, setFiles] = React.useState<File[] | undefined>(undefined);
+    // State for the two uploaded files
+    const [files, setFiles] = React.useState<File[]>([]);
+
+    // State for whether the dialog is open
     const [openDialog, setOpenDialog] = React.useState(false);
-    const [data, setData] = React.useState<unknown>();
+
+    // XLSX data from your custom parse function
+    const [data, setData] = React.useState<Data | undefined>(undefined);
+
+    // Loading states
     const [isLoading, setIsLoading] = React.useState(false);
     const [loadingMessage, setLoadingMessage] = React.useState("Processing...");
     const [loadingImage, setLoadingImage] = React.useState(
         "/path/to/default/image.png"
     );
+    const [uploadedPdfBytes, setUploadedPdfBytes] =
+        React.useState<Uint8Array | null>(null);
 
+    // Build academic year dropdown from the current year
     const currentYear = new Date().getFullYear();
     const academicYearOptions = [currentYear - 1, currentYear, currentYear + 1];
 
+    // React Hook Form setup
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -90,54 +101,123 @@ export default function FileUploadForm() {
         },
     });
 
-    async function validateAndProcessXLSX(files: File[]) {
-        if (files.length === 0) {
-            toast.error("No file uploaded!");
-            return;
-        }
+    /**
+     * We only parse XLSX after it has successfully passed validations.
+     */
+    function parseXLSXFile(file: File) {
+        return new Promise<Data>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const fileContent = e.target?.result;
+                if (!fileContent) {
+                    return reject(new Error("File read error - empty result."));
+                }
+                try {
+                    const sheetsData = processData(fileContent as string);
+                    resolve(sheetsData as unknown as Data);
+                } catch (err) {
+                    reject(err);
+                }
+            };
+            reader.onerror = () => {
+                reject(new Error("Error reading the XLSX file."));
+            };
+            reader.readAsBinaryString(file);
+        });
+    }
 
-        const file = files[0];
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const data = e.target?.result;
-            if (data) {
-                const sheetsData = processData(data as string);
-                setData(sheetsData);
-                setOpenDialog(true);
+    /**
+     * Once both files pass validation in <FileUploader>,
+     * we parse the XLSX and only then open the dialog if both XLSX & PDF are found.
+     */
+    async function onAllFilesValidated(uploadedFiles: File[]) {
+        try {
+            // Check for exactly one XLSX file
+            const xlsxFile = uploadedFiles.find((f) =>
+                f.type.includes("spreadsheetml")
+            );
+            if (!xlsxFile) {
+                throw new Error(
+                    "No XLSX file found. Please upload a valid XLSX file."
+                );
             }
-        };
 
-        reader.onerror = () => {
-            toast.error("Error reading the file!");
-        };
+            // Check for exactly one PDF file
+            const pdfFile = uploadedFiles.find(
+                (f) => f.type === "application/pdf"
+            );
+            if (!pdfFile) {
+                throw new Error(
+                    "No PDF file found. Please upload a valid PDF file."
+                );
+            }
 
-        reader.readAsBinaryString(file);
+            // Parse the XLSX for data
+            const extractedData = await parseXLSXFile(xlsxFile);
+            setData(extractedData);
+            // Read the PDF file as ArrayBuffer
+            const pdfBytes = await readFileAsArrayBuffer(pdfFile);
+            setUploadedPdfBytes(new Uint8Array(pdfBytes));
+
+            // Once we have valid XLSX data and we know a PDF is present,
+            // open the dialog to collect additional info.
+            setOpenDialog(true);
+        } catch (err) {
+            console.error(err);
+            toast.error(String(err));
+        }
     }
-
-    async function handleSubmit(files: File[]) {
-        console.log(files);
+    /**
+     * Utility function to read a file as ArrayBuffer
+     */
+    function readFileAsArrayBuffer(file: File): Promise<ArrayBuffer> {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                if (reader.result) {
+                    resolve(reader.result as ArrayBuffer);
+                } else {
+                    reject(new Error("Failed to read file."));
+                }
+            };
+            reader.onerror = () => {
+                reject(new Error("Error reading file."));
+            };
+            reader.readAsArrayBuffer(file);
+        });
     }
-
+    /**
+     * Handler for the final submission of the dialog data.
+     */
     async function onDialogSubmit(values: FormValues) {
         const startTime = new Date();
-        const classNumber = values.classNumber;
-        const date = values.date;
-        const grade = values.grade;
-        const name = values.name;
-        const semester = values.semester;
-        const academicYearStart = values.academicYearStart;
+        const { date, name, grade, classNumber, semester, academicYearStart } =
+            values;
 
         try {
             setIsLoading(true);
             setLoadingMessage("Getting the data ready!");
             setLoadingImage("/images/tired-monkey-teacher.png");
 
-            const { females, males } = splitByGender(data as unknown as Data);
+            if (!data) {
+                throw new Error(
+                    "No data to process — did you upload the correct file?"
+                );
+            }
+
+            if (!uploadedPdfBytes) {
+                throw new Error("No PDF template uploaded.");
+            }
+
+            // Prepare & print the PDFs
+            const { females, males } = splitByGender(data);
             const femalePDFs: PDF[] = transformToPDF(females);
             const malePDFs: PDF[] = transformToPDF(males);
+
+            // "Simulate" some asynchronous progress
             await new Promise((resolve) => setTimeout(resolve, 3000));
 
+            // Generate the PDF for females
             setLoadingMessage("Generating girl PDF!");
             setLoadingImage("/images/girl-monkey-working.png");
             await printPDF(
@@ -148,10 +228,13 @@ export default function FileUploadForm() {
                 academicYearStart,
                 grade as Grade,
                 date,
-                name
+                name,
+                uploadedPdfBytes
             );
+
             await new Promise((resolve) => setTimeout(resolve, 1000));
 
+            // Generate the PDF for males
             setLoadingMessage("Generating boy PDF!");
             setLoadingImage("/images/boy-monkey-working.png");
             await printPDF(
@@ -162,22 +245,35 @@ export default function FileUploadForm() {
                 academicYearStart,
                 grade as Grade,
                 date,
-                name
+                name,
+                uploadedPdfBytes
             );
+
             await new Promise((resolve) => setTimeout(resolve, 1000));
 
+            // All done
             setLoadingMessage("All done!");
             setLoadingImage("/images/happy-monkey-teacher.png");
             await new Promise((resolve) => setTimeout(resolve, 1000));
 
+            // Close the dialog
             setOpenDialog(false);
         } catch (error) {
             console.error(error);
-            setLoadingMessage("Submission failed. Please try again.");
-            setLoadingImage("/path/to/error/image.png");
+            setIsLoading(true);
+            setLoadingMessage(
+                "An error occurred while generating the PDFs. Check to make sure the files you uploaded are correct."
+            );
+            setLoadingImage("/images/error-monkey.png");
+            toast.error(
+                "An error occurred while generating the PDFs. Check to make sure the files you uploaded are correct."
+            );
+            await new Promise((resolve) => setTimeout(resolve, 3000));
+            setIsLoading(false);
         } finally {
             setIsLoading(false);
 
+            // Just measuring how long everything took
             const endTime = new Date();
             const duration = endTime.getTime() - startTime.getTime();
             const minutes = Math.floor(duration / 60000);
@@ -191,38 +287,61 @@ export default function FileUploadForm() {
         }
     }
 
+    // Decide whether or not to show "Submit additional information" button
+    const isXlsx = files.some((f) => f.type.includes("spreadsheetml"));
+    const isPdf = files.some((f) => f.type === "application/pdf");
+    const showDialogButton = isXlsx && isPdf && data;
+
     return (
         <>
-            <form className="flex flex-col gap-4 max-w-xl mx-auto">
+            {/**
+             * Our FileUploader ensures:
+             *   - Exactly one XLSX w/ "Reparper Template"
+             *   - Exactly one PDF matching `[1-6]-[1-4] S[1-2] (Boys|Girls) YYYY-YY`
+             *   - Only 2 files total
+             */}
+            <form className="mx-auto flex max-w-xl flex-col gap-4">
                 <FileUploader
+                    // Accept XLSX and PDF only
                     accept={{
                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
                             [],
+                        "application/pdf": [],
                     }}
-                    maxFileCount={1}
-                    multiple={false}
+                    // Max 2 files
+                    maxFileCount={2}
+                    multiple={true}
+                    // Pass the files into parent state
                     value={files}
-                    onValueChange={(files) => {
-                        setFiles(files);
+                    onValueChange={(uploaded) => {
+                        setFiles(uploaded);
                     }}
-                    onUpload={async (files) => {
-                        await validateAndProcessXLSX(files);
-                        await handleSubmit(files);
+                    // onUpload is only called if both files pass validation
+                    onUpload={async (uploadedFiles) => {
+                        // Once validated, parse XLSX and (only then) show dialog
+                        await onAllFilesValidated(uploadedFiles);
                     }}
                 />
             </form>
 
-            {files && files.length > 0 && (
-                <div className="flex justify-center mt-4">
-                    <Button
-                        size={"lg"}
-                        onClick={() => setOpenDialog(true)}
-                    >
-                        Submit additional info
+            {/**
+             * 2) Show the button only if:
+             *    - The XLSX is parsed into `data` (meaning it was successfully read).
+             *    - We still have exactly one XLSX and one PDF in `files`.
+             *    If either file is removed, the button goes away.
+             */}
+            {showDialogButton && (
+                <div className="mt-4 flex justify-center">
+                    <Button onClick={() => setOpenDialog(true)}>
+                        Submit additional information
                     </Button>
                 </div>
             )}
 
+            {/**
+             * 3) The <Dialog> is opened immediately after files are validated
+             *    or via the button above.
+             */}
             <Dialog
                 open={openDialog}
                 onOpenChange={setOpenDialog}
@@ -240,6 +359,7 @@ export default function FileUploadForm() {
                             onSubmit={form.handleSubmit(onDialogSubmit)}
                             className="space-y-4"
                         >
+                            {/* Date */}
                             <FormField
                                 control={form.control}
                                 name="date"
@@ -253,14 +373,15 @@ export default function FileUploadForm() {
                                             />
                                         </FormControl>
                                         <FormDescription>
-                                            This is the date that the report
-                                            cards will be given to the students.
+                                            The date that the report cards will
+                                            be given to the students.
                                         </FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
 
+                            {/* Name */}
                             <FormField
                                 control={form.control}
                                 name="name"
@@ -275,15 +396,15 @@ export default function FileUploadForm() {
                                             />
                                         </FormControl>
                                         <FormDescription>
-                                            This is the name that will appear on
-                                            each report card (e.g. Mr.
-                                            Fitzgerald).
+                                            The name that will appear on each
+                                            report card (e.g. Mr. Fitzgerald).
                                         </FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
 
+                            {/* Grade */}
                             <FormField
                                 control={form.control}
                                 name="grade"
@@ -325,6 +446,7 @@ export default function FileUploadForm() {
                                 )}
                             />
 
+                            {/* Class Number */}
                             <FormField
                                 control={form.control}
                                 name="classNumber"
@@ -360,6 +482,7 @@ export default function FileUploadForm() {
                                 )}
                             />
 
+                            {/* Semester */}
                             <FormField
                                 control={form.control}
                                 name="semester"
@@ -389,6 +512,7 @@ export default function FileUploadForm() {
                                 )}
                             />
 
+                            {/* Academic Year Start */}
                             <FormField
                                 control={form.control}
                                 name="academicYearStart"
@@ -435,8 +559,9 @@ export default function FileUploadForm() {
                         </form>
                     </Form>
 
+                    {/* Loading overlay while generating PDFs */}
                     {isLoading && (
-                        <div className="absolute inset-0 bg-background/80 flex flex-col items-center justify-center gap-4">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-background/80">
                             <Image
                                 src={loadingImage}
                                 alt="Loading"
@@ -447,7 +572,7 @@ export default function FileUploadForm() {
                             <p className="text-3xl font-semibold">
                                 {loadingMessage}
                             </p>
-                            <div className="flex flex-col justify-center items-center gap-3">
+                            <div className="flex flex-col items-center justify-center gap-3">
                                 <div className="mx-auto w-full text-center">
                                     This shouldn&apos;t take more than a
                                     minute—hang in there!

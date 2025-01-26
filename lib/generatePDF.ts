@@ -1,4 +1,4 @@
-import { CENTURY_SKILLS_FONT_SIZE, COMMENT_FONT_SIZE, COVER_PAGE_FONT_SIZE, Grade, GRADE_FORM_URLS, GRADE_WORD_MAP, SEMESTER_WORD_MAP, studentLetters, SUBJECT_ACHIEVEMENT_COMMENT_FONT_SIZE, TITLE_FONT_SIZE } from "./constants"
+import { CENTURY_SKILLS_FONT_SIZE, COMMENT_FONT_SIZE, COVER_PAGE_FONT_SIZE, Grade, GRADE_WORD_MAP, SEMESTER_WORD_MAP, studentLetters, SUBJECT_ACHIEVEMENT_COMMENT_FONT_SIZE, TITLE_FONT_SIZE } from "./constants"
 import { StudentField } from "./types"
 import { PDFDocument } from "pdf-lib";
 import fontkit from '@pdf-lib/fontkit'
@@ -21,35 +21,37 @@ export async function printPDF(
     classGrade: Grade,
     publishDate: string,
     teacherName: string,
+    templatePdfBytes: Uint8Array // New optional parameter
 ) {
-    const formUrl = GRADE_FORM_URLS[classGrade];
-    const formPdfBytes = await fetch(formUrl).then((res) => res.arrayBuffer());
-    const pdfDoc = await PDFDocument.load(formPdfBytes);
+    // const formUrl = GRADE_FORM_URLS[classGrade];
+    // const formPdfBytes = await fetch(formUrl).then((res) => res.arrayBuffer());
+    const pdfDoc = await PDFDocument.load(templatePdfBytes);
     pdfDoc.registerFontkit(fontkit);
-
-    // Fonts
-    // const [
-    //     calibriFontBytes,
-    //     calibriBoldFontBytes,
-    //     cambriaBoldFontBytes,
-    //     firaSansRegularBytes
-    //   ] = await Promise.all([
-    //     // fetch('https://68ialhn9h2.ufs.sh/f/pK4nD7CymfwDlaxbqQtj436hbI2XTiBqMLrt1U7spvEw5ofF').then(r => r.arrayBuffer()),
-    //     // fetch('https://68ialhn9h2.ufs.sh/f/pK4nD7CymfwDQBe79FA3NaDc8h7ylKOFuZfwHr6o1sxzInLm').then(r => r.arrayBuffer()),
-    //     // fetch('https://68ialhn9h2.ufs.sh/f/pK4nD7CymfwDfwlmA1uCxXVGRnoBmhADsIi58ZgW2ptSTuHe').then(r => r.arrayBuffer()),
-    //     // fetch('https://68ialhn9h2.ufs.sh/f/pK4nD7CymfwDyRg3H4EsbVR3ALxUmWQezgiYId5G2H9MTPSv').then(r => r.arrayBuffer())
-    //     fetch('fonts/calibri.ttf').then(r => r.arrayBuffer()),
-    //     fetch('fonts/calibri-bold.ttf').then(r => r.arrayBuffer()),
-    //     fetch('fonts/cambria-bold.ttf').then(r => r.arrayBuffer()),
-    //     fetch('fonts/FiraSans-Regular.ttf').then(r => r.arrayBuffer())
-    //   ]);
       
-    const calibriFontBytes = await fetch('https://68ialhn9h2.ufs.sh/f/pK4nD7CymfwDlaxbqQtj436hbI2XTiBqMLrt1U7spvEw5ofF').then(r => r.arrayBuffer());
     // const calibriBoldFontBytes = await fetch('https://68ialhn9h2.ufs.sh/f/pK4nD7CymfwDQBe79FA3NaDc8h7ylKOFuZfwHr6o1sxzInLm').then(r => r.arrayBuffer());
-    const cambriaBoldFontBytes = await fetch('https://68ialhn9h2.ufs.sh/f/pK4nD7CymfwDfwlmA1uCxXVGRnoBmhADsIi58ZgW2ptSTuHe').then(r => r.arrayBuffer());
-    const firaSansRegularBytes = await fetch('https://68ialhn9h2.ufs.sh/f/pK4nD7CymfwDyRg3H4EsbVR3ALxUmWQezgiYId5G2H9MTPSv').then(r => r.arrayBuffer());
-    const firaSansBoldBytes = await fetch('https://68ialhn9h2.ufs.sh/f/pK4nD7CymfwD1CcICKzGj4mEaiNZzkFnbyhver0O8ScVfsYp').then(r => r.arrayBuffer());
+    // const calibriFontBytes = await fetch('https://68ialhn9h2.ufs.sh/f/pK4nD7CymfwDlaxbqQtj436hbI2XTiBqMLrt1U7spvEw5ofF').then(r => r.arrayBuffer());
+    // const cambriaBoldFontBytes = await fetch('https://68ialhn9h2.ufs.sh/f/pK4nD7CymfwDfwlmA1uCxXVGRnoBmhADsIi58ZgW2ptSTuHe').then(r => r.arrayBuffer());
+    // const firaSansRegularBytes = await fetch('https://68ialhn9h2.ufs.sh/f/pK4nD7CymfwDyRg3H4EsbVR3ALxUmWQezgiYId5G2H9MTPSv').then(r => r.arrayBuffer());
+    // const firaSansBoldBytes = await fetch('https://68ialhn9h2.ufs.sh/f/pK4nD7CymfwD1CcICKzGj4mEaiNZzkFnbyhver0O8ScVfsYp').then(r => r.arrayBuffer());
     
+    // Fonts
+    const [
+        calibriFontBytes,
+        calibriBoldFontBytes,
+        cambriaBoldFontBytes,
+        firaSansRegularBytes,
+        firaSansBoldBytes
+    ] = await Promise.all([
+        fetch('https://68ialhn9h2.ufs.sh/f/pK4nD7CymfwDlaxbqQtj436hbI2XTiBqMLrt1U7spvEw5ofF').then(r => r.arrayBuffer()), // Calibri
+        fetch('https://68ialhn9h2.ufs.sh/f/pK4nD7CymfwDQBe79FA3NaDc8h7ylKOFuZfwHr6o1sxzInLm').then(r => r.arrayBuffer()), // Calibri Bold
+        fetch('https://68ialhn9h2.ufs.sh/f/pK4nD7CymfwDfwlmA1uCxXVGRnoBmhADsIi58ZgW2ptSTuHe').then(r => r.arrayBuffer()), // Cambria Bold
+        fetch('https://68ialhn9h2.ufs.sh/f/pK4nD7CymfwDyRg3H4EsbVR3ALxUmWQezgiYId5G2H9MTPSv').then(r => r.arrayBuffer()), // Fira Sans Regular
+        fetch('https://68ialhn9h2.ufs.sh/f/pK4nD7CymfwD1CcICKzGj4mEaiNZzkFnbyhver0O8ScVfsYp').then(r => r.arrayBuffer())  // Fira Sans Bold
+    ]);
+  
+  // Now you can use the font bytes as needed
+  console.log(calibriFontBytes, calibriBoldFontBytes, cambriaBoldFontBytes, firaSansRegularBytes, firaSansBoldBytes);
+
     const calibriFont = await pdfDoc.embedFont(calibriFontBytes);
     // const calibriBoldFont = await pdfDoc.embedFont(calibriBoldFontBytes);
     const cambriaBoldFont = await pdfDoc.embedFont(cambriaBoldFontBytes);
